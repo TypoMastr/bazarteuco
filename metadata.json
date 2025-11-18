@@ -1,0 +1,5 @@
+{
+  "name": "bazarteuco",
+  "description": "Um painel completo para gerenciar as vendas, produtos e categorias do seu Bazar usando a API SmartPOS. Interface moderna, animações fluidas e controle total de estoque.",
+  "requestFramePermissions": []
+}
