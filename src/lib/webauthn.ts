@@ -61,8 +61,9 @@ export async function registerCredential(
     ],
     authenticatorSelection: {
       authenticatorAttachment: 'platform',
-      userVerification: 'required',
-      requireResidentKey: false,
+      userVerification: 'preferred',
+      requireResidentKey: true,
+      residentKey: 'required',
     },
     timeout: TIMEOUT,
   }
@@ -93,9 +94,8 @@ export async function authenticateCredential(
     allowCredentials: allowedCredentialIds.map(id => ({
       id: base64ToBuffer(id),
       type: 'public-key' as const,
-      transports: ['internal'] as AuthenticatorTransport[],
     })),
-    userVerification: 'required',
+    userVerification: 'preferred',
     timeout: TIMEOUT,
   }
 

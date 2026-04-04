@@ -58,7 +58,7 @@ export default function LoginPage() {
               displayName: 'Bazar TEUCO User',
             })
 
-            await fetch('/api/auth/webauthn/register', {
+            const regRes = await fetch('/api/auth/webauthn/register', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -68,8 +68,20 @@ export default function LoginPage() {
                 deviceName: getDeviceName(),
               }),
             })
-          } catch (err) {
-            console.log('Biometric registration skipped or failed:', err)
+
+            if (!regRes.ok) {
+              setError('Falha ao salvar biometria. Login realizado normalmente.')
+            }
+          } catch (err: any) {
+            if (err.name === 'NotAllowedError') {
+              setError('Biometria cancelada. Login realizado normalmente.')
+            } else {
+              setError('Não foi possível salvar a biometria. Login realizado normalmente.')
+            }
+            setTimeout(() => {
+              window.location.href = '/sales'
+            }, 2000)
+            return
           }
         }
 
