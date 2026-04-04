@@ -183,6 +183,12 @@ export default function ProductsPage() {
         backLink="/sales"
         actions={
           <>
+            <Link href="/products/new">
+              <Button className="h-9 px-4 text-xs">
+                <Plus className="h-4 w-4 mr-1" />
+                Novo
+              </Button>
+            </Link>
             <Button variant="outline" onClick={handleSync} disabled={syncing} className="h-9 px-4 text-xs">
               <RefreshCw className={cn("h-4 w-4 mr-1", syncing && "animate-spin")} />
               {syncing ? 'Sincronizando' : 'Sincronizar'}
@@ -191,12 +197,6 @@ export default function ProductsPage() {
               <CloudUpload className={cn("h-4 w-4 mr-1", updatingSite && "animate-spin")} />
               {updatingSite ? 'Atualizando...' : 'Atualizar Site'}
             </Button>
-            <Link href="/products/new">
-              <Button className="h-9 px-4 text-xs">
-                <Plus className="h-4 w-4 mr-1" />
-                Novo
-              </Button>
-            </Link>
             <ExportMenu products={products} />
           </>
         }
