@@ -382,7 +382,7 @@ export default function SalesPage() {
                 <div className="flex items-center gap-3 flex-1">
                   <div className="flex-1">
                     <span className="text-base font-black text-[var(--teuco-text)] uppercase block">
-                       {sale.orderName || `#${sale.id.slice(-6)}`}
+                       {sale.orderName || (sale.id && /^\d+$/.test(sale.id) ? `#${sale.id}` : `Venda`)}
                     </span>
                     <span className="text-sm font-bold text-[var(--teuco-text-muted)] block">
                        {formatDate(sale.creationDate)}

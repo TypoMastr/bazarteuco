@@ -29,8 +29,9 @@ export interface SaleData {
   uniqueIdentifier: string
   creationDate: string
   totalAmount: number
-  items?: any[]
+  saleNumber?: number | string
   orderName?: string
+  items?: any[]
 }
 
 export interface ReportData {
@@ -231,7 +232,8 @@ function exportSalesPDF(doc: jsPDF, data: any): void {
 
   sales.forEach((sale) => {
     const uid = sale.uniqueIdentifier || sale.id
-    const saleLabel = sale.orderName || (sale.uniqueIdentifier ? `#${sale.uniqueIdentifier}` : `#${uid.slice(-6)}`)
+    const saleNum = sale.saleNumber || sale.orderName || sale.id
+    const saleLabel = typeof saleNum === 'number' ? `#${saleNum}` : `#${saleNum}`
     const { date: saleDate, time: saleTime } = formatDateTimeBR(sale.creationDate)
 
     const items = saleItemsMap[uid] || sale.items || []

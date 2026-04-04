@@ -25,6 +25,7 @@ export async function initSalesCache(): Promise<void> {
     CREATE TABLE IF NOT EXISTS sales_cache (
       id INT PRIMARY KEY AUTO_INCREMENT,
       sale_id VARCHAR(50) UNIQUE,
+      sale_number VARCHAR(20),
       unique_identifier VARCHAR(100),
       creation_date DATETIME,
       total_amount DECIMAL(10,2),
@@ -35,6 +36,10 @@ export async function initSalesCache(): Promise<void> {
       INDEX idx_sale_id (sale_id)
     )
   `)
+
+  try {
+    await executeUpdate(`ALTER TABLE sales_cache ADD COLUMN sale_number VARCHAR(20) AFTER sale_id`)
+  } catch {}
 
   await executeUpdate(`
     CREATE TABLE IF NOT EXISTS sale_items_cache (
@@ -128,9 +133,9 @@ export async function syncSalesFromAPI(
 
       try {
         await executeUpdate(
-          `INSERT IGNORE INTO sales_cache (sale_id, unique_identifier, creation_date, total_amount, discount_amount, is_canceled)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [saleId, sale.uniqueIdentifier || null, sale.creationDate, sale.totalAmount || 0, sale.discountAmount || 0, sale.isCanceled || false]
+          `INSERT IGNORE INTO sales_cache (sale_id, sale_number, unique_identifier, creation_date, total_amount, discount_amount, is_canceled)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [saleId, sale.id || null, sale.uniqueIdentifier || null, sale.creationDate, sale.totalAmount || 0, sale.discountAmount || 0, sale.isCanceled || false]
         )
 
         await executeUpdate(
@@ -176,7 +181,7 @@ export async function getDailyReport(date: string) {
   const endISO = `${date}T23:59:59Z`
 
   const sales = await executeQuery<any>(`
-    SELECT sale_id, unique_identifier, creation_date, total_amount, discount_amount
+    SELECT sale_id, sale_number, unique_identifier, creation_date, total_amount, discount_amount
     FROM sales_cache
     WHERE creation_date >= ? AND creation_date <= ?
     AND is_canceled = FALSE
@@ -232,7 +237,7 @@ export async function getDailyReport(date: string) {
       }))
 
     return {
-      saleNumber: index + 1,
+      saleNumber: sale.sale_number || index + 1,
       saleId: sale.sale_id,
       uniqueIdentifier: sale.unique_identifier,
       creationDate: sale.creation_date ? sale.creation_date.toISOString() : '',
