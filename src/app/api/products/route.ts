@@ -89,6 +89,10 @@ export async function POST(request: NextRequest) {
     
     const { initialStock, ...productBody } = body
     
+    // Convert name and description to uppercase
+    const productName = (productBody.name || '').toUpperCase()
+    const productDescription = (productBody.description || productBody.name || '').toUpperCase()
+    
     // SmartPOS API requires 'description' field (separate from 'name')
     if (!productBody.description && productBody.name) {
       productBody.description = productBody.name
@@ -96,15 +100,15 @@ export async function POST(request: NextRequest) {
     
     // Build the exact payload that SmartPOS API expects
     const smartposPayload = {
-      alphaCode: productBody.alphaCode,
-      description: productBody.description || productBody.name,
+      alphaCode: (productBody.alphaCode || '').toUpperCase(),
+      description: productDescription,
       sellValue: Number(productBody.sellValue) || 0,
       costValue: Number(productBody.costValue) || 0,
       eanCode: productBody.eanCode || undefined,
       netWeight: productBody.netWeight ? Number(productBody.netWeight) : undefined,
       grossWeight: productBody.grossWeight ? Number(productBody.grossWeight) : undefined,
       minimumStock: Number(productBody.minimumStock) || 0,
-      observation: productBody.observation || undefined,
+      observation: productBody.observation ? productBody.observation.toUpperCase() : undefined,
       exTipi: productBody.exTipi || undefined,
       cest: productBody.cest || undefined,
       isFractional: false,
@@ -120,7 +124,7 @@ export async function POST(request: NextRequest) {
       productOrigin: 'NACIONAL',
       favorite: 1,
       detail: productBody.detail ? {
-        text: productBody.detail.text || '',
+        text: (productBody.detail.text || '').toUpperCase(),
         viewMode: 'TEXT',
         color: productBody.detail.color || '#ffff6010',
       } : undefined,
@@ -140,14 +144,14 @@ export async function POST(request: NextRequest) {
       const localId = -Math.floor(Math.random() * 1000000) // Negative temp ID
       data = {
         id: localId,
-        alphaCode: productBody.alphaCode,
-        name: productBody.description || productBody.name,
-        description: productBody.description || productBody.name,
+        alphaCode: (productBody.alphaCode || '').toUpperCase(),
+        name: productDescription,
+        description: productDescription,
         sellValue: Number(productBody.sellValue) || 0,
         costValue: Number(productBody.costValue) || 0,
         minimumStock: Number(productBody.minimumStock) || 0,
         category: Number(productBody.category),
-        observation: productBody.observation,
+        observation: productBody.observation ? productBody.observation.toUpperCase() : undefined,
         noStock: false,
         isFractional: false,
         pendingSync: true,

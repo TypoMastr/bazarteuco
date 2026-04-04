@@ -215,6 +215,9 @@ export default function EditProductPage() {
     try {
       const body = {
         ...form,
+        name: form.name.toUpperCase(),
+        alphaCode: form.alphaCode.toUpperCase(),
+        observation: form.observation ? form.observation.toUpperCase() : undefined,
         sellValue: parseFloat(form.sellValue) || 0,
         costValue: parseFloat(form.costValue) || 0,
         netWeight: parseFloat(form.netWeight) || 0,

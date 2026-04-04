@@ -144,7 +144,10 @@ export default function NewProductPage() {
       const { detail, ...formWithoutDetail } = form
       const body = {
         ...formWithoutDetail,
-        description: form.name,
+        name: form.name.toUpperCase(),
+        alphaCode: form.alphaCode.toUpperCase(),
+        observation: form.observation ? form.observation.toUpperCase() : undefined,
+        description: form.name.toUpperCase(),
         sellValue: parseFloat(form.sellValue) || 0,
         costValue: parseFloat(form.costValue) || 0,
         minimumStock: parseFloat(form.minimumStock) || 0,

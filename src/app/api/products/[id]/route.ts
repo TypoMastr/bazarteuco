@@ -80,6 +80,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
     }
     
+    // Convert to uppercase
+    body.name = (body.name || '').toUpperCase()
+    body.alphaCode = (body.alphaCode || '').toUpperCase()
+    body.observation = body.observation ? body.observation.toUpperCase() : undefined
+    body.description = body.description ? body.description.toUpperCase() : undefined
+    
     // Check if it's a local product (negative ID)
     if (numericId < 0) {
       try {
