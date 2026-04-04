@@ -22,8 +22,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
     const data = await updateProduct(id, body)
     
-    // Sync imediato após editar
-    await syncProductsToMySQL()
+    // Sync para MySQL em background (não bloqueia a resposta)
+    syncProductsToMySQL().catch(err => console.error('[Sync] Products sync error:', err))
     
     return NextResponse.json(data)
   } catch (error) {
@@ -38,8 +38,8 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     const { id } = await params
     await deleteProduct(id)
     
-    // Sync imediato após deletar
-    await syncProductsToMySQL()
+    // Sync para MySQL em background (não bloqueia a resposta)
+    syncProductsToMySQL().catch(err => console.error('[Sync] Products sync error:', err))
     
     return NextResponse.json({ success: true })
   } catch (error) {
