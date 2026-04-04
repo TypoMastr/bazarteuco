@@ -232,7 +232,11 @@ function exportSalesPDF(doc: jsPDF, data: any): void {
 
   let headerText = 'Bazar TEUCO'
   if (dateRange && dateRange.start && dateRange.end) {
-    headerText += ` - ${formatDateBR(dateRange.start)} ate ${formatDateBR(dateRange.end)}`
+    if (dateRange.start === dateRange.end) {
+      headerText += ` - ${formatDateBR(dateRange.start)}`
+    } else {
+      headerText += ` - ${formatDateBR(dateRange.start)} ate ${formatDateBR(dateRange.end)}`
+    }
   }
   headerText += ` | Vendas: ${sales.length} | Receita: ${formatCurrency(total)}`
 
