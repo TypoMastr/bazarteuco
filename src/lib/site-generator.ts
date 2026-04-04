@@ -39,8 +39,8 @@ function getEmoji(categoryName: string): string {
   return '📦'
 }
 
-function formatPrice(value: number): string {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+function formatPrice(value: number | string): string {
+  return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
 export async function generateSiteHtml(): Promise<string> {
@@ -80,8 +80,8 @@ export async function generateSiteHtml(): Promise<string> {
   let html = fs.readFileSync(templatePath, 'utf-8')
 
   const now = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-  html = html.replace('__GENERATED_AT__', now)
-  html = html.replace('__CATALOGO_JSON__', JSON.stringify(catalogo, null, 4))
+    html = html.replace('__GENERATED_AT__', now)
+    html = html.replace('{{CATALOGO_JSON}}', JSON.stringify(catalogo))
 
   return html
 }

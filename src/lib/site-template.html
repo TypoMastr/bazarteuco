@@ -8,13 +8,12 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Bazar TEUCO - Catálogo de Produtos</title>
-    <!-- Generated: __GENERATED_AT__ -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root{--primary-green:#08A045;--light-green-accent:#80D8A5;--dark-green-text:#034D21;--bg-color:#F8F9FA;--card-bg:#FFFFFF;--text-color:#343A40;--text-light:#5f6c75;--white-color:#FFFFFF;--neutral-gray:#E9ECEF;--gradient-main:linear-gradient(135deg, var(--primary-green), var(--light-green-accent));--shadow-soft:0 6px 20px rgba(0, 0, 0, 0.06);--shadow-medium:0 10px 30px rgba(0, 0, 0, 0.1);--border-radius-main:12px;--border-radius-smooth:25px;--font-primary:'Montserrat', sans-serif;--font-secondary:'Roboto', sans-serif;--anim-cubic:cubic-bezier(0.25, 0.46, 0.45, 0.94);--anim-bounce:cubic-bezier(0.68, -0.55, 0.27, 1.55);--anim-duration-fast:0.3s;--anim-curve-modal:cubic-bezier(0.4, 0, 0.2, 1)}*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:var(--font-secondary),serif;background:var(--bg-color);min-height:100vh;padding:20px;color:var(--text-color)}.container{max-width:1200px;margin:0 auto}.header{background:var(--gradient-main);color:var(--white-color);padding:30px 20px;border-radius:var(--border-radius-main);display:flex;flex-direction:column;align-items:center;justify-content:center}.header-logo{height:60px;margin-bottom:15px}.header-title{font-family:var(--font-primary);font-size:2.2em;font-weight:600;text-shadow:0 2px 4px rgba(0,0,0,0.2)}.content{padding:40px 0}.category{margin-bottom:40px;background:var(--card-bg);border-radius:var(--border-radius-main);box-shadow:var(--shadow-soft);border:1px solid var(--neutral-gray);overflow:hidden;opacity:0;transform:translateY(20px);transition:opacity 0.5s var(--anim-cubic), transform 0.5s var(--anim-cubic)}.category.visible{opacity:1;transform:translateY(0)}.category-header{background:var(--gradient-main);color:var(--white-color);padding:20px;font-size:1.8em;font-family:var(--font-primary);font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:15px;cursor:pointer;position:relative;overflow:hidden}.category-header .category-emoji{transition:transform 0.3s var(--anim-cubic)}.category-header:hover .category-emoji{transform:scale(1.2)}.products{padding:25px}.product{display:flex;align-items:center;padding:15px;margin-bottom:10px;background:var(--card-bg);border-radius:8px;border:1px solid var(--neutral-gray);border-left:4px solid var(--primary-green);cursor:pointer;transition:transform 0.3s var(--anim-cubic), box-shadow 0.3s var(--anim-cubic), background-color 0.2s ease;position:relative;overflow:hidden;gap:10px}.product:hover{transform:translateY(-4px);box-shadow:var(--shadow-medium)}.product.clicked{transform:scale(0.97);background-color:#e8f5e9;transition:transform 0.15s var(--anim-bounce)}.product-code{font-weight:700;color:var(--dark-green-text);font-size:0.8em;padding:3px 8px;background:rgba(8,160,69,0.08);border-radius:6px;flex-shrink:0;font-family:var(--font-primary);letter-spacing:0.5px}.product-name{font-weight:500;color:var(--text-color);margin-right:auto;min-width:0;flex-shrink:1;font-size:clamp(0.9em, 2.5vw, 1em)}.product-price{font-weight:bold;color:var(--primary-green);font-size:1.1em;padding:8px 15px;background:rgba(8, 160, 69, 0.1);border-radius:var(--border-radius-smooth);flex-shrink:0;white-space:nowrap}.variants{margin-left:20px;margin-top:10px;border-left:2px solid var(--neutral-gray);padding-left:15px}.variant{padding:8px 15px;margin:5px 0;background:rgba(0,0,0,0.03);border-radius:8px;border-left:3px solid var(--light-green-accent);color:var(--text-light);cursor:pointer}.variant.clicked{transform:scale(0.97);background-color:#e8f5e9;transition:transform 0.15s var(--anim-bounce)}.search-box{margin-bottom:40px;position:relative}.search-input{width:100%;padding:18px 55px 18px 25px;font-size:1.1em;background-color:var(--white-color);border:1px solid var(--neutral-gray);border-radius:var(--border-radius-smooth);outline:none;transition:all 0.3s var(--anim-cubic)}.search-input:focus{border-color:var(--primary-green);box-shadow:0 0 0 4px rgba(8, 160, 69, 0.15)}.search-icon{position:absolute;right:25px;top:50%;transform:translateY(-50%);color:var(--primary-green);font-size:1.3em}.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0, 0, 0, 0.6);backdrop-filter:blur(5px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;visibility:hidden;opacity:0;transition:opacity var(--anim-duration-fast) var(--anim-curve-modal), visibility 0s var(--anim-duration-fast)}.modal-overlay.active{visibility:visible;opacity:1;transition-delay:0s}.modal-content{background:var(--white-color);border-radius:var(--border-radius-main);box-shadow:var(--shadow-medium);position:relative;width:100%;max-width:600px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;opacity:0;transform:translateY(100vh);transition:transform var(--anim-duration-fast) var(--anim-curve-modal), opacity var(--anim-duration-fast) ease;--shadow-color:rgba(0, 0, 0, 0.15)}.modal-content::before,.modal-content::after{content:'';position:absolute;left:0;right:0;height:1px;z-index:5;pointer-events:none;opacity:0;transition:opacity 0.3s ease-in-out}.modal-content::before{top:0;box-shadow:inset 0 15px 10px -15px var(--shadow-color)}.modal-content::after{bottom:0;box-shadow:inset 0 -15px 10px -15px var(--shadow-color)}.modal-content.show-top-shadow::before{opacity:1}.modal-content.show-bottom-shadow::after{opacity:1}.modal-scroll-container{flex-grow:1;overflow-y:auto;padding:30px}.modal-overlay.active .modal-content{opacity:1;transform:translateY(0)}.modal-close{position:absolute;top:15px;right:20px;font-size:2rem;color:#aaa;cursor:pointer;transition:color 0.2s ease;z-index:10}.modal-close:hover{color:var(--text-color)}.modal-category-tag,#modalCategoryName{font-family:var(--font-primary);color:var(--dark-green-text);margin-bottom:15px}#modalCategoryName{font-size:2rem}.modal-category-tag{background-color:rgba(8, 160, 69, 0.1);color:var(--primary-green);font-weight:600;font-size:0.8rem;padding:4px 10px;border-radius:var(--border-radius-smooth);display:inline-block;text-transform:uppercase}#modalProductName{font-size:2rem;margin-bottom:10px}#modalProductPrice{font-size:1.5rem;font-weight:bold;color:var(--primary-green);margin-bottom:25px}#modalActions,#modalCategoryActions{margin-bottom:25px;display:flex;flex-direction:column;gap:15px;align-items:center}.modal-button{display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;max-width:280px;padding:10px 18px;text-decoration:none;border-radius:var(--border-radius-smooth);font-weight:600;font-family:var(--font-primary);font-size:0.9em;transition:all 0.3s var(--anim-cubic)}.modal-button.cta{background:var(--primary-green);color:var(--white-color);border:1px solid transparent}.modal-button.whatsapp{background:var(--white-color);color:var(--primary-green);border:1px solid rgba(8, 160, 69, 0.4);box-shadow:0 2px 8px rgba(0,0,0,0.07)}.modal-button.whatsapp:hover{background-color:var(--bg-color);border-color:var(--primary-green);box-shadow:0 4px 12px rgba(0,0,0,0.1)}.modal-button:hover{transform:translateY(-2px);box-shadow:var(--shadow-medium)}#modalProductVariants h3{font-family:var(--font-primary);color:var(--dark-green-text);margin-bottom:15px;border-bottom:2px solid var(--neutral-gray);padding-bottom:5px}#modalProductVariants .variants,#modalCategoryProductList .variants{margin:0 0 10px 20px;padding-left:5px;border:none}#modalCategoryProductList .product{box-shadow:var(--shadow-soft)}.whatsapp-share-button{position:fixed;bottom:25px;right:25px;background-color:#25D366;color:var(--white-color);width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;text-decoration:none;box-shadow:0 4px 15px rgba(0,0,0,0.2);z-index:999;transition:transform 0.3s var(--anim-cubic), box-shadow 0.3s var(--anim-cubic)}.whatsapp-share-button:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(0,0,0,0.3)}#iframeModal .modal-content{max-width:900px}#iframeModalTitle{font-family:var(--font-primary);color:var(--dark-green-text);margin-bottom:20px;border-bottom:2px solid var(--neutral-gray);padding-bottom:10px}#iframeContent{width:100%;height:70vh}#iframeContent iframe{width:100%;height:100%;border:none;border-radius:8px}@media (max-width: 768px){body{padding:10px 8px}.header-logo{height:50px}.header-title{font-size:1.8em}.content{padding:20px 0}.category-header{padding:16px;font-size:1.4em}.products{padding:20px 15px}.product{padding:12px;margin-bottom:8px;align-items:center;flex-wrap:nowrap}.product-price{font-size:1em;padding:6px 12px}.search-input{padding:14px 45px 14px 20px;font-size:1em}.search-icon{right:20px;font-size:1.1em}.variants{margin-top:8px;margin-left:15px;padding-left:12px}.variant{padding:6px 12px;margin:4px 0;font-size:0.9em}#modalProductName,#modalCategoryName{font-size:1.5rem}#modalProductPrice{font-size:1.2rem}#iframeModal .modal-content{padding:15px;max-height:85vh}#iframeContent{height:75vh}.modal-scroll-container{padding:20px}}@keyframes fadeInUp{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}.modal-scroll-container>*{opacity:0}.modal-close{opacity:0}.modal-overlay.active .modal-scroll-container>*{animation:fadeInUp 0.5s var(--anim-curve-modal) forwards}.modal-overlay.active .modal-close{opacity:1;transition:opacity 0.4s ease;transition-delay:0.5s}.modal-overlay.active .modal-scroll-container>*:nth-child(2){animation-delay:0.2s}.modal-overlay.active .modal-scroll-container>*:nth-child(3){animation-delay:0.28s}.modal-overlay.active .modal-scroll-container>*:nth-child(4){animation-delay:0.36s}.modal-overlay.active .modal-scroll-container>*:nth-child(5){animation-delay:0.44s}.modal-overlay.active .modal-scroll-container>*:nth-child(6){animation-delay:0.52s}.category-header{justify-content:space-between;align-items:center}.product-action-indicator,.category-action-indicator{position:relative;font-size:1em;flex-shrink:0}.product-action-indicator{color:var(--text-light);opacity:0.6;font-size:0.9em}.category-action-indicator{color:var(--white-color);opacity:0.7}@media (min-width: 768px){.product:hover .indicator-icon:not(.active){color:var(--primary-green);transform:translateX(3px)}.category-header:hover .indicator-icon:not(.active){opacity:1;transform:scale(1.1)}}.indicator-icon{display:inline-block;transition:transform 0.25s var(--anim-cubic)}.indicator-icon.active{transform:rotate(-90deg)}@keyframes shimmer-effect{from{transform:translateX(-100%) skewX(-20deg)}to{transform:translateX(200%) skewX(-20deg)}}.origin-ping::after{content:'';position:absolute;top:0;left:0;width:50%;height:100%;background:linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.4), rgba(255,255,255,0));animation:shimmer-effect 0.75s ease-out}
+        :root{--primary-green:#08A045;--light-green-accent:#80D8A5;--dark-green-text:#034D21;--bg-color:#F8F9FA;--card-bg:#FFFFFF;--text-color:#343A40;--text-light:#5f6c75;--white-color:#FFFFFF;--neutral-gray:#E9ECEF;--gradient-main:linear-gradient(135deg, var(--primary-green), var(--light-green-accent));--shadow-soft:0 6px 20px rgba(0, 0, 0, 0.06);--shadow-medium:0 10px 30px rgba(0, 0, 0, 0.1);--border-radius-main:12px;--border-radius-smooth:25px;--font-primary:'Montserrat', sans-serif;--font-secondary:'Roboto', sans-serif;--anim-cubic:cubic-bezier(0.25, 0.46, 0.45, 0.94);--anim-bounce:cubic-bezier(0.68, -0.55, 0.27, 1.55);--anim-duration-fast:0.3s;--anim-curve-modal:cubic-bezier(0.4, 0, 0.2, 1)}*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:var(--font-secondary),serif;background:var(--bg-color);min-height:100vh;padding:20px;color:var(--text-color)}.container{max-width:1200px;margin:0 auto}.header{background:var(--gradient-main);color:var(--white-color);padding:30px 20px;border-radius:var(--border-radius-main);display:flex;flex-direction:column;align-items:center;justify-content:center}.header-logo{height:60px;margin-bottom:15px}.header-title{font-family:var(--font-primary);font-size:2.2em;font-weight:600;text-shadow:0 2px 4px rgba(0,0,0,0.2)}.content{padding:40px 0}.category{margin-bottom:40px;background:var(--card-bg);border-radius:var(--border-radius-main);box-shadow:var(--shadow-soft);border:1px solid var(--neutral-gray);overflow:hidden;opacity:0;transform:translateY(20px);transition:opacity 0.5s var(--anim-cubic), transform 0.5s var(--anim-cubic)}.category.visible{opacity:1;transform:translateY(0)}.category-header{background:var(--gradient-main);color:var(--white-color);padding:20px;font-size:1.8em;font-family:var(--font-primary);font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:15px;cursor:pointer;position:relative;overflow:hidden}.category-header .category-emoji{transition:transform 0.3s var(--anim-cubic)}.category-header:hover .category-emoji{transform:scale(1.2)}.products{padding:25px}.product{display:flex;align-items:center;padding:15px;margin-bottom:10px;background:var(--card-bg);border-radius:8px;border:1px solid var(--neutral-gray);border-left:4px solid var(--primary-green);cursor:pointer;transition:transform 0.3s var(--anim-cubic), box-shadow 0.3s var(--anim-cubic), background-color 0.2s ease;position:relative;overflow:hidden;gap:10px}.product:hover{transform:translateY(-4px);box-shadow:var(--shadow-medium)}.product.clicked{transform:scale(0.97);background-color:#e8f5e9;transition:transform 0.15s var(--anim-bounce)}.product-code{font-weight:700;color:var(--dark-green-text);font-size:0.8em;padding:3px 8px;background:rgba(8,160,69,0.08);border-radius:6px;flex-shrink:0;font-family:var(--font-primary);letter-spacing:0.5px}.product-name{font-weight:500;color:var(--text-color);margin-right:auto;min-width:0;flex-shrink:1;font-size:clamp(0.9em, 2.5vw, 1em)}.product-price{font-weight:bold;color:var(--primary-green);font-size:1.1em;padding:8px 15px;background:rgba(8, 160, 69, 0.1);border-radius:var(--border-radius-smooth);flex-shrink:0;white-space:nowrap}.variants{margin-left:20px;margin-top:10px;border-left:2px solid var(--neutral-gray);padding-left:15px}.variant{padding:8px 15px;margin:5px 0;background:rgba(0,0,0,0.03);border-radius:8px;border-left:3px solid var(--light-green-accent);color:var(--text-light);cursor:pointer}.variant.clicked{transform:scale(0.97);background-color:#e8f5e9;transition:transform 0.15s var(--anim-bounce)}.search-box{margin-bottom:40px;position:relative}.search-input{width:100%;padding:18px 55px 18px 25px;font-size:1.1em;background-color:var(--white-color);border:1px solid var(--neutral-gray);border-radius:var(--border-radius-smooth);outline:none;transition:all 0.3s var(--anim-cubic)}.search-input:focus{border-color:var(--primary-green);box-shadow:0 0 0 4px rgba(8, 160, 69, 0.15)}.search-icon{position:absolute;right:25px;top:50%;transform:translateY(-50%);color:var(--primary-green);font-size:1.3em}.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0, 0, 0, 0.6);backdrop-filter:blur(5px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;visibility:hidden;opacity:0;transition:opacity var(--anim-duration-fast) var(--anim-curve-modal), visibility 0s var(--anim-duration-fast)}.modal-overlay.active{visibility:visible;opacity:1;transition-delay:0s}.modal-content{background:var(--white-color);border-radius:var(--border-radius-main);box-shadow:var(--shadow-medium);position:relative;width:100%;max-width:600px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;opacity:0;transform:translateY(100vh);transition:transform var(--anim-duration-fast) var(--anim-curve-modal), opacity var(--anim-duration-fast) ease;--shadow-color:rgba(0, 0, 0, 0.15)}.modal-content::before,.modal-content::after{content:'';position:absolute;left:0;right:0;height:1px;z-index:5;pointer-events:none;opacity:0;transition:opacity 0.3s ease-in-out}.modal-content::before{top:0;box-shadow:inset 0 15px 10px -15px var(--shadow-color)}.modal-content::after{bottom:0;box-shadow:inset 0 -15px 10px -15px var(--shadow-color)}.modal-content.show-top-shadow::before{opacity:1}.modal-content.show-bottom-shadow::after{opacity:1}.modal-scroll-container{flex-grow:1;overflow-y:auto;padding:30px}.modal-overlay.active .modal-content{opacity:1;transform:translateY(0)}.modal-close{position:absolute;top:15px;right:20px;font-size:2rem;color:#aaa;cursor:pointer;transition:color 0.2s ease;z-index:10}.modal-close:hover{color:var(--text-color)}.modal-category-tag,#modalCategoryName{font-family:var(--font-primary);color:var(--dark-green-text);margin-bottom:15px}#modalCategoryName{font-size:2rem}.modal-category-tag{background-color:rgba(8, 160, 69, 0.1);color:var(--primary-green);font-weight:600;font-size:0.8rem;padding:4px 10px;border-radius:var(--border-radius-smooth);display:inline-block;text-transform:uppercase}#modalProductName{font-size:2rem;margin-bottom:10px}#modalProductPrice{font-size:1.5rem;font-weight:bold;color:var(--primary-green);margin-bottom:25px}#modalActions,#modalCategoryActions{margin-bottom:25px;display:flex;flex-direction:column;gap:15px;align-items:center}.modal-button{display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;max-width:280px;padding:10px 18px;text-decoration:none;border-radius:var(--border-radius-smooth);font-weight:600;font-family:var(--font-primary);font-size:0.9em;transition:all 0.3s var(--anim-cubic)}.modal-button.cta{background:var(--primary-green);color:var(--white-color);border:1px solid transparent}.modal-button.whatsapp{background:var(--white-color);color:var(--primary-green);border:1px solid rgba(8, 160, 69, 0.4);box-shadow:0 2px 8px rgba(0,0,0,0.07)}.modal-button.whatsapp:hover{background-color:var(--bg-color);border-color:var(--primary-green);box-shadow:0 4px 12px rgba(0,0,0,0.1)}.modal-button:hover{transform:translateY(-2px);box-shadow:var(--shadow-medium)}#modalProductVariants h3{font-family:var(--font-primary);color:var(--dark-green-text);margin-bottom:15px;border-bottom:2px solid var(--neutral-gray);padding-bottom:5px}#modalProductVariants .variants,#modalCategoryProductList .variants{margin:0 0 10px 20px;padding-left:5px;border:none}#modalCategoryProductList .product{box-shadow:var(--shadow-soft)}.whatsapp-share-button{position:fixed;bottom:25px;right:25px;background-color:#25D366;color:var(--white-color);width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;text-decoration:none;box-shadow:0 4px 15px rgba(0,0,0,0.2);z-index:999;transition:transform 0.3s var(--anim-cubic), box-shadow 0.3s var(--anim-cubic)}.whatsapp-share-button:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(0,0,0,0.3)}@media (max-width: 768px){body{padding:10px 8px}.header-logo{height:50px}.header-title{font-size:1.8em}.content{padding:20px 0}.category-header{padding:16px;font-size:1.4em}.products{padding:20px 15px}.product{padding:12px;margin-bottom:8px;align-items:center;flex-wrap:nowrap}.product-price{font-size:1em;padding:6px 12px}.search-input{padding:14px 45px 14px 20px;font-size:1em}.search-icon{right:20px;font-size:1.1em}.variants{margin-top:8px;margin-left:15px;padding-left:12px}.variant{padding:6px 12px;margin:4px 0;font-size:0.9em}#modalProductName,#modalCategoryName{font-size:1.5rem}#modalProductPrice{font-size:1.2rem}.modal-scroll-container{padding:20px}}@keyframes fadeInUp{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}.modal-scroll-container>*{opacity:0}.modal-close{opacity:0}.modal-overlay.active .modal-scroll-container>*{animation:fadeInUp 0.5s var(--anim-curve-modal) forwards}.modal-overlay.active .modal-close{opacity:1;transition:opacity 0.4s ease;transition-delay:0.5s}.modal-overlay.active .modal-scroll-container>*:nth-child(2){animation-delay:0.2s}.modal-overlay.active .modal-scroll-container>*:nth-child(3){animation-delay:0.28s}.modal-overlay.active .modal-scroll-container>*:nth-child(4){animation-delay:0.36s}.modal-overlay.active .modal-scroll-container>*:nth-child(5){animation-delay:0.44s}.modal-overlay.active .modal-scroll-container>*:nth-child(6){animation-delay:0.52s}.category-header{justify-content:space-between;align-items:center}.product-action-indicator,.category-action-indicator{position:relative;font-size:1em;flex-shrink:0}.product-action-indicator{color:var(--text-light);opacity:0.6;font-size:0.9em}.category-action-indicator{color:var(--white-color);opacity:0.7}@media (min-width: 768px){.product:hover .indicator-icon:not(.active){color:var(--primary-green);transform:translateX(3px)}.category-header:hover .indicator-icon:not(.active){opacity:1;transform:scale(1.1)}}.indicator-icon{display:inline-block;transition:transform 0.25s var(--anim-cubic)}.indicator-icon.active{transform:rotate(-90deg)}@keyframes shimmer-effect{from{transform:translateX(-100%) skewX(-20deg)}to{transform:translateX(200%) skewX(-20deg)}}.origin-ping::after{content:'';position:absolute;top:0;left:0;width:50%;height:100%;background:linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.4), rgba(255,255,255,0));animation:shimmer-effect 0.75s ease-out}
     </style>
 </head>
 
@@ -27,115 +26,324 @@
         <main class="content">
             <div class="search-box">
                 <input type="text" class="search-input" placeholder="Buscar produtos..." id="searchInput">
-                <span class="search-icon">🔍</span>
+                <span class="search-icon">&#x1F50D;</span>
             </div>
             <div id="catalog-container"></div>
         </main>
     </div>
+
     <a href="#" id="whatsappShareBtn" class="whatsapp-share-button" target="_blank" title="Compartilhar no WhatsApp">
         <i class="fab fa-whatsapp"></i>
     </a>
+
+    <!-- Product Modal -->
     <div class="modal-overlay" id="productModal">
-        <div class="modal-content"><span class="modal-close" id="modalCloseButton">&times;</span><div class="modal-scroll-container"><p id="modalProductCategory" class="modal-category-tag"></p><h2 id="modalProductName"></h2><p id="modalProductPrice"></p><div id="modalActions"></div><div id="modalProductVariants"></div></div></div>
+        <div class="modal-content">
+            <span class="modal-close" id="modalCloseBtn">&times;</span>
+            <div class="modal-scroll-container">
+                <p id="modalCategoryTag" class="modal-category-tag"></p>
+                <h2 id="modalProductName"></h2>
+                <p id="modalProductPrice"></p>
+                <div id="modalActions"></div>
+                <div id="modalVariants"></div>
+            </div>
+        </div>
     </div>
+
+    <!-- Category Modal -->
     <div class="modal-overlay" id="categoryModal">
-        <div class="modal-content"><span class="modal-close" id="categoryModalCloseButton">&times;</span><div class="modal-scroll-container"><h2 id="modalCategoryName"></h2><div id="modalCategoryActions"></div><div id="modalCategoryProductList"></div></div></div>
-    </div>
-    <div class="modal-overlay" id="iframeModal">
-        <div class="modal-content"><span class="modal-close" id="iframeModalCloseButton">&times;</span><div class="modal-scroll-container"><h2 id="iframeModalTitle">Estampas Disponíveis</h2><div id="iframeContent"><iframe src="" frameborder="0"></iframe></div></div></div>
+        <div class="modal-content">
+            <span class="modal-close" id="categoryModalCloseBtn">&times;</span>
+            <div class="modal-scroll-container">
+                <h2 id="modalCategoryName"></h2>
+                <div id="modalCategoryActions"></div>
+                <div id="modalCategoryProducts"></div>
+            </div>
+        </div>
     </div>
 
     <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', function() {
 
-        const catalogo = __CATALOGO_JSON__;
+        var catalogo = {{CATALOGO_JSON}};
 
-        const sortAlphabetically = (a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
-        catalogo.sort((a, b) => sortAlphabetically(a.categoria, b.categoria));
-        catalogo.forEach(cat => { cat.produtos.sort((a, b) => sortAlphabetically(a.nome, b.nome)); cat.produtos.forEach(prod => { if (prod.variantes) { prod.variantes.sort(sortAlphabetically); } }); });
-        const catalogContainer = document.getElementById('catalog-container');
-        if (catalogContainer) { catalogo.forEach(cat => { const categoryDiv = document.createElement('div'); categoryDiv.className = 'category'; let productsHTML = ''; cat.produtos.forEach(prod => { productsHTML += `
-                        <div class="product">
-                            <span class="product-code">${prod.codigo || ''}</span>
-                            <span class="product-name">${prod.nome}</span>
-                            <span class="product-price">${prod.preco}</span>
-                            <span class="product-action-indicator"><i class="fas fa-chevron-right indicator-icon"></i></span>
-                        </div>
-                    `; if (prod.variantes && prod.variantes.length > 0) { productsHTML += `<div class="variants">`; prod.variantes.forEach(variante => { productsHTML += `<div class="variant">${variante}</div>`; }); productsHTML += `</div>`; } }); categoryDiv.innerHTML = `
-                    <div class="category-header">
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            <span class="category-emoji">${cat.emoji}</span>
-                            <span>${cat.categoria}</span>
-                        </div>
-                        <span class="category-action-indicator"><i class="fas fa-chevron-right indicator-icon"></i></span>
-                    </div>
-                    <div class="products">${productsHTML}</div>
-                `; catalogContainer.appendChild(categoryDiv); }); }
+        var container = document.getElementById('catalog-container');
 
-        const searchInput = document.getElementById('searchInput');
-        const allCategories = document.querySelectorAll('.category');
+        function sortPt(a, b) {
+            return a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
+        }
 
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase().trim();
+        function renderCatalog() {
+            if (!catalogo || catalogo.length === 0) {
+                container.innerHTML = '<p style="text-align:center;color:#999;padding:40px;">Nenhum produto encontrado.</p>';
+                return;
+            }
 
-            allCategories.forEach(category => {
-                let hasVisibleItemsInCategory = false;
-                const products = category.querySelectorAll('.product');
+            catalogo.sort(function(a, b) { return sortPt(a.categoria, b.categoria); });
+            catalogo.forEach(function(cat) {
+                cat.produtos.sort(function(a, b) { return sortPt(a.nome, b.nome); });
+                if (cat.variantes) cat.variantes.sort(sortPt);
+            });
 
-                products.forEach(product => {
-                    const productName = product.querySelector('.product-name').textContent.toLowerCase();
-                    const productCode = product.querySelector('.product-code').textContent.toLowerCase();
-                    const variantsContainer = product.nextElementSibling;
-                    let variantsText = '';
+            catalogo.forEach(function(cat) {
+                var catDiv = document.createElement('div');
+                catDiv.className = 'category';
 
-                    if (variantsContainer && variantsContainer.classList.contains('variants')) {
-                        variantsContainer.querySelectorAll('.variant').forEach(variant => {
-                            variantsText += variant.textContent.toLowerCase() + ' ';
+                var headerDiv = document.createElement('div');
+                headerDiv.className = 'category-header';
+
+                var titleDiv = document.createElement('div');
+                titleDiv.style.display = 'flex';
+                titleDiv.style.alignItems = 'center';
+                titleDiv.style.gap = '15px';
+
+                var emojiSpan = document.createElement('span');
+                emojiSpan.className = 'category-emoji';
+                emojiSpan.textContent = cat.emoji;
+
+                var nameSpan = document.createElement('span');
+                nameSpan.textContent = cat.categoria;
+
+                titleDiv.appendChild(emojiSpan);
+                titleDiv.appendChild(nameSpan);
+
+                var indicatorDiv = document.createElement('span');
+                indicatorDiv.className = 'category-action-indicator';
+                indicatorDiv.innerHTML = '<i class="fas fa-chevron-right indicator-icon"></i>';
+
+                headerDiv.appendChild(titleDiv);
+                headerDiv.appendChild(indicatorDiv);
+
+                var productsDiv = document.createElement('div');
+                productsDiv.className = 'products';
+
+                cat.produtos.forEach(function(prod) {
+                    var prodDiv = document.createElement('div');
+                    prodDiv.className = 'product';
+                    prodDiv.setAttribute('data-name', prod.nome);
+                    prodDiv.setAttribute('data-code', prod.codigo || '');
+                    prodDiv.setAttribute('data-price', prod.preco);
+
+                    var codeSpan = document.createElement('span');
+                    codeSpan.className = 'product-code';
+                    codeSpan.textContent = prod.codigo || '';
+
+                    var nameSpan = document.createElement('span');
+                    nameSpan.className = 'product-name';
+                    nameSpan.textContent = prod.nome;
+
+                    var priceSpan = document.createElement('span');
+                    priceSpan.className = 'product-price';
+                    priceSpan.textContent = prod.preco;
+
+                    var actionSpan = document.createElement('span');
+                    actionSpan.className = 'product-action-indicator';
+                    actionSpan.innerHTML = '<i class="fas fa-chevron-right indicator-icon"></i>';
+
+                    prodDiv.appendChild(codeSpan);
+                    prodDiv.appendChild(nameSpan);
+                    prodDiv.appendChild(priceSpan);
+                    prodDiv.appendChild(actionSpan);
+                    productsDiv.appendChild(prodDiv);
+
+                    if (prod.variantes && prod.variantes.length > 0) {
+                        var variantsDiv = document.createElement('div');
+                        variantsDiv.className = 'variants';
+                        prod.variantes.forEach(function(v) {
+                            var vDiv = document.createElement('div');
+                            vDiv.className = 'variant';
+                            vDiv.textContent = v;
+                            variantsDiv.appendChild(vDiv);
                         });
-                    }
-
-                    const fullTextContent = productCode + ' ' + productName + ' ' + variantsText;
-                    const isMatch = fullTextContent.includes(searchTerm);
-
-                    product.style.display = isMatch ? 'flex' : 'none';
-                    if (variantsContainer && variantsContainer.classList.contains('variants')) {
-                        variantsContainer.style.display = isMatch ? 'block' : 'none';
-                    }
-
-                    if (isMatch) {
-                        hasVisibleItemsInCategory = true;
+                        productsDiv.appendChild(variantsDiv);
                     }
                 });
 
-                if (searchTerm === '') {
-                    hasVisibleItemsInCategory = true;
-                }
-
-                category.style.display = hasVisibleItemsInCategory ? 'block' : 'none';
+                catDiv.appendChild(headerDiv);
+                catDiv.appendChild(productsDiv);
+                container.appendChild(catDiv);
             });
-        });
 
-        const observer = new IntersectionObserver((entries, observer) => { entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); } }); }, { threshold: 0.1 });
-        allCategories.forEach(category => { observer.observe(category); });
-        const modals = { product: document.getElementById('productModal'), category: document.getElementById('categoryModal'), iframe: document.getElementById('iframeModal'), };
-        const iframeElement = document.getElementById('iframeContent').querySelector('iframe');
-        let lastOpenedCategoryHeader = null; let cameFromCategoryModal = false; let lastClickedElement = null;
-        function updateScrollIndicators(wrapper, scrollContainer) { if (!wrapper || !scrollContainer) return; const tolerance = 1; const hasScroll = scrollContainer.scrollHeight > scrollContainer.clientHeight; const atTop = scrollContainer.scrollTop <= tolerance; const atBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight <= tolerance; wrapper.classList.toggle('show-top-shadow', hasScroll && !atTop); wrapper.classList.toggle('show-bottom-shadow', hasScroll && !atBottom); }
-        function setIndicatorState(element, state) { const icon = element.querySelector('.indicator-icon'); if (!icon) return; icon.classList.remove('active'); if (state === 'active') { icon.classList.add('active'); } }
-        const closeModal = (modalOverlay, onClosedCallback) => { const elementToPing = lastClickedElement; const modalContent = modalOverlay.querySelector('.modal-content'); modalOverlay.classList.remove('active'); if (elementToPing) { setIndicatorState(elementToPing, null); } setTimeout(() => { if (modalContent) { const scrollContainer = modalContent.querySelector('.modal-scroll-container'); if (scrollContainer) scrollContainer.onscroll = null; modalContent.classList.remove('show-top-shadow', 'show-bottom-shadow'); } if (elementToPing) { elementToPing.classList.add('origin-ping'); elementToPing.addEventListener('animationend', () => { elementToPing.classList.remove('origin-ping'); }, { once: true }); } if (onClosedCallback) { onClosedCallback(); } }, 300); };
-        const openProductModal = (productElement) => { lastClickedElement = productElement; setIndicatorState(productElement, 'active'); const modalOverlay = modals.product; const name = productElement.querySelector('.product-name').textContent; const price = productElement.querySelector('.product-price').textContent; const categoryElement = productElement.closest('.category'); const categoryName = categoryElement.querySelector('.category-header span:last-of-type').textContent; modalOverlay.querySelector('#modalProductCategory').textContent = categoryName; modalOverlay.querySelector('#modalProductName').textContent = name; modalOverlay.querySelector('#modalProductPrice').textContent = price; const variantsDiv = modalOverlay.querySelector('#modalProductVariants'); const actionsDiv = modalOverlay.querySelector('#modalActions'); variantsDiv.innerHTML = ''; actionsDiv.innerHTML = ''; let shareText = `Confira este produto do Bazar TEUCO:\n\n*Produto:* ${name}\n*Preço:* ${price}`; if (name.trim().toUpperCase() === 'CAMISAS UMBANDA') { const ctaButton = document.createElement('button'); ctaButton.className = 'modal-button cta'; ctaButton.innerHTML = `<i class="fas fa-tshirt"></i> Ver Estampas`; ctaButton.onclick = () => openIframeModal('https://teuco.com.br/camisas/index.html'); actionsDiv.appendChild(ctaButton); } const variantsContainer = productElement.nextElementSibling; if (variantsContainer && variantsContainer.classList.contains('variants')) { const variants = Array.from(variantsContainer.querySelectorAll('.variant')).map(v => v.textContent.trim()); shareText += `\n\n*Opções Disponíveis:*\n- ${variants.join('\n- ')}`; const clonedVariants = variantsContainer.cloneNode(true); const variantsTitle = document.createElement('h3'); variantsTitle.textContent = 'Opções Disponíveis'; variantsDiv.appendChild(variantsTitle); variantsDiv.appendChild(clonedVariants); } const shareButton = document.createElement('a'); shareButton.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`; shareButton.target = '_blank'; shareButton.className = 'modal-button whatsapp'; shareButton.innerHTML = `<i class="fab fa-whatsapp"></i> Compartilhar Produto`; actionsDiv.appendChild(shareButton); const modalContent = modalOverlay.querySelector('.modal-content'); const scrollContainer = modalContent.querySelector('.modal-scroll-container'); scrollContainer.onscroll = () => updateScrollIndicators(modalContent, scrollContainer); setTimeout(() => updateScrollIndicators(modalContent, scrollContainer), 50); modalOverlay.classList.add('active'); };
-        const openCategoryModal = (header) => { lastClickedElement = header; setIndicatorState(header, 'active'); const modalOverlay = modals.category; lastOpenedCategoryHeader = header; const categoryName = header.querySelector('div > span:last-of-type').textContent; const productsContainer = header.nextElementSibling; modalOverlay.querySelector('#modalCategoryName').textContent = categoryName; const productListDiv = modalOverlay.querySelector('#modalCategoryProductList'); const categoryActionsDiv = modalOverlay.querySelector('#modalCategoryActions'); productListDiv.innerHTML = productsContainer.innerHTML; categoryActionsDiv.innerHTML = ''; let categoryShareText = `Confira os produtos da categoria *${categoryName}* no Bazar TEUCO:\n`; productsContainer.querySelectorAll('.product').forEach(product => { categoryShareText += `\n*${product.querySelector('.product-name').textContent.trim()}* - ${product.querySelector('.product-price').textContent.trim()}`; }); const shareCategoryButton = document.createElement('a'); shareCategoryButton.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(categoryShareText)}`; shareCategoryButton.target = '_blank'; shareCategoryButton.className = 'modal-button whatsapp'; shareCategoryButton.innerHTML = `<i class="fab fa-whatsapp"></i> Compartilhar Categoria`; categoryActionsDiv.appendChild(shareCategoryButton); attachProductClickListeners(productListDiv, true); const modalContent = modalOverlay.querySelector('.modal-content'); const scrollContainer = modalContent.querySelector('.modal-scroll-container'); scrollContainer.onscroll = () => updateScrollIndicators(modalContent, scrollContainer); setTimeout(() => updateScrollIndicators(modalContent, scrollContainer), 50); modalOverlay.classList.add('active'); };
-        const openIframeModal = (url) => { iframeElement.src = url; modals.iframe.classList.add('active'); };
-        const attachProductClickListeners = (container, fromCategoryModal = false) => { container.querySelectorAll('.product').forEach(product => { product.addEventListener('click', (e) => { e.stopPropagation(); const originalProductName = product.querySelector('.product-name').textContent; const originalProduct = Array.from(document.querySelectorAll('#catalog-container .product .product-name')).find(p => p.textContent === originalProductName).closest('.product'); if (!originalProduct) return; if (fromCategoryModal) { cameFromCategoryModal = true; closeModal(modals.category, () => { openProductModal(originalProduct); }); } else { product.classList.add('clicked'); setTimeout(() => { openProductModal(originalProduct); product.classList.remove('clicked'); }, 150); } }); }); };
-        attachProductClickListeners(document.getElementById('catalog-container'));
-        document.getElementById('catalog-container').addEventListener('click', function(e) { if (e.target && e.target.matches('.variant')) { e.stopPropagation(); e.target.classList.add('clicked'); const parentProduct = e.target.closest('.variants').previousElementSibling; setTimeout(() => { openProductModal(parentProduct); e.target.classList.remove('clicked'); }, 150); } if (e.target && e.target.closest('.category-header')) { cameFromCategoryModal = false; openCategoryModal(e.target.closest('.category-header')); } });
-        document.getElementById('modalCloseButton').addEventListener('click', () => { closeModal(modals.product, () => { if (cameFromCategoryModal) { openCategoryModal(lastOpenedCategoryHeader); cameFromCategoryModal = false; } else { lastClickedElement = null; } }); });
-        document.getElementById('categoryModalCloseButton').addEventListener('click', () => { closeModal(modals.category, () => { lastClickedElement = null; }); });
-        const iframeCloseButton = document.getElementById('iframeModalCloseButton'); const closeIframeModalAction = (event) => { event.preventDefault(); closeModal(modals.iframe, () => { lastClickedElement = null; }); };
-        iframeCloseButton.addEventListener('click', closeIframeModalAction); iframeCloseButton.addEventListener('touchend', closeIframeModalAction);
-        Object.values(modals).forEach(modal => { modal.addEventListener('click', (e) => { if (e.target === modal) { closeModal(modal, () => { lastClickedElement = null; } }); } }); });
-        const shareBtn = document.getElementById('whatsappShareBtn');
-        shareBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(`Olá! Confira a lista de produtos do Bazar TEUCO:\n${window.location.href}`)}`;
+            observeCategories();
+            attachEvents();
+        }
+
+        function observeCategories() {
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.category').forEach(function(cat) {
+                observer.observe(cat);
+            });
+        }
+
+        function attachEvents() {
+            document.querySelectorAll('.category-header').forEach(function(header) {
+                header.addEventListener('click', function() {
+                    openCategoryModal(header);
+                });
+            });
+
+            document.querySelectorAll('.product').forEach(function(prod) {
+                prod.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    prod.classList.add('clicked');
+                    setTimeout(function() {
+                        openProductModal(prod);
+                        prod.classList.remove('clicked');
+                    }, 150);
+                });
+            });
+
+            document.querySelectorAll('.variant').forEach(function(v) {
+                v.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    v.classList.add('clicked');
+                    var prod = v.closest('.variants').previousElementSibling;
+                    setTimeout(function() {
+                        openProductModal(prod);
+                        v.classList.remove('clicked');
+                    }, 150);
+                });
+            });
+
+            document.getElementById('modalCloseBtn').addEventListener('click', function() {
+                closeModal('productModal');
+            });
+
+            document.getElementById('categoryModalCloseBtn').addEventListener('click', function() {
+                closeModal('categoryModal');
+            });
+
+            ['productModal', 'categoryModal'].forEach(function(id) {
+                document.getElementById(id).addEventListener('click', function(e) {
+                    if (e.target === this) closeModal(id);
+                });
+            });
+
+            var searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', function() {
+                var term = this.value.toLowerCase().trim();
+                document.querySelectorAll('.category').forEach(function(cat) {
+                    var hasVisible = false;
+                    cat.querySelectorAll('.product').forEach(function(prod) {
+                        var name = prod.getAttribute('data-name').toLowerCase();
+                        var code = prod.getAttribute('data-code').toLowerCase();
+                        var match = name.indexOf(term) !== -1 || code.indexOf(term) !== -1;
+                        prod.style.display = match ? 'flex' : 'none';
+                        var variants = prod.nextElementSibling;
+                        if (variants && variants.classList.contains('variants')) {
+                            variants.style.display = match ? 'block' : 'none';
+                        }
+                        if (match) hasVisible = true;
+                    });
+                    cat.style.display = (term === '' || hasVisible) ? 'block' : 'none';
+                });
+            });
+
+            var shareBtn = document.getElementById('whatsappShareBtn');
+            shareBtn.href = 'https://api.whatsapp.com/send?text=' + encodeURIComponent('Olá! Confira a lista de produtos do Bazar TEUCO:\n' + window.location.href);
+        }
+
+        function openProductModal(prodEl) {
+            var name = prodEl.getAttribute('data-name');
+            var price = prodEl.getAttribute('data-price');
+            var catEl = prodEl.closest('.category');
+            var catName = catEl.querySelector('.category-header span:last-of-type').textContent;
+
+            document.getElementById('modalCategoryTag').textContent = catName;
+            document.getElementById('modalProductName').textContent = name;
+            document.getElementById('modalProductPrice').textContent = price;
+
+            var actionsDiv = document.getElementById('modalActions');
+            actionsDiv.innerHTML = '';
+
+            var variantsDiv = document.getElementById('modalVariants');
+            variantsDiv.innerHTML = '';
+
+            var shareText = 'Confira este produto do Bazar TEUCO:\n\n*Produto:* ' + name + '\n*Preço:* ' + price;
+
+            if (name.trim().toUpperCase() === 'CAMISAS UMBANDA') {
+                var btn = document.createElement('a');
+                btn.href = 'https://teuco.com.br/camisas/index.html';
+                btn.target = '_blank';
+                btn.className = 'modal-button cta';
+                btn.innerHTML = '<i class="fas fa-tshirt"></i> Ver Estampas';
+                actionsDiv.appendChild(btn);
+            }
+
+            var variantsEl = prodEl.nextElementSibling;
+            if (variantsEl && variantsEl.classList.contains('variants')) {
+                var variants = [];
+                variantsEl.querySelectorAll('.variant').forEach(function(v) { variants.push(v.textContent); });
+                shareText += '\n\n*Opções Disponíveis:*\n- ' + variants.join('\n- ');
+
+                var title = document.createElement('h3');
+                title.textContent = 'Opções Disponíveis';
+                variantsDiv.appendChild(title);
+
+                var clone = variantsEl.cloneNode(true);
+                clone.querySelectorAll('.variant').forEach(function(v) {
+                    v.style.cursor = 'default';
+                });
+                variantsDiv.appendChild(clone);
+            }
+
+            var shareBtn = document.createElement('a');
+            shareBtn.href = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(shareText);
+            shareBtn.target = '_blank';
+            shareBtn.className = 'modal-button whatsapp';
+            shareBtn.innerHTML = '<i class="fab fa-whatsapp"></i> Compartilhar Produto';
+            actionsDiv.appendChild(shareBtn);
+
+            openModal('productModal');
+        }
+
+        function openCategoryModal(headerEl) {
+            var catName = headerEl.querySelector('div > span:last-of-type').textContent;
+            var productsContainer = headerEl.nextElementSibling;
+
+            document.getElementById('modalCategoryName').textContent = catName;
+
+            var actionsDiv = document.getElementById('modalCategoryActions');
+            actionsDiv.innerHTML = '';
+
+            var productsDiv = document.getElementById('modalCategoryProducts');
+            productsDiv.innerHTML = '';
+
+            var shareText = 'Confira os produtos da categoria *' + catName + '* no Bazar TEUCO:\n';
+            productsContainer.querySelectorAll('.product').forEach(function(prod) {
+                shareText += '\n*' + prod.getAttribute('data-name').trim() + '* - ' + prod.getAttribute('data-price').trim();
+                var clone = prod.cloneNode(true);
+                clone.classList.remove('clicked');
+                productsDiv.appendChild(clone);
+            });
+
+            var shareBtn = document.createElement('a');
+            shareBtn.href = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(shareText);
+            shareBtn.target = '_blank';
+            shareBtn.className = 'modal-button whatsapp';
+            shareBtn.innerHTML = '<i class="fab fa-whatsapp"></i> Compartilhar Categoria';
+            actionsDiv.appendChild(shareBtn);
+
+            openModal('categoryModal');
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        renderCatalog();
     });
     </script>
 
