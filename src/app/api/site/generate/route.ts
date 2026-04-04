@@ -116,6 +116,16 @@ async function syncAll() {
     conn.release()
   }
 
+  // Delete products from MySQL that no longer exist in SmartPOS (keep local pending products)
+  const smartposIds = products.map(p => p.id)
+  if (smartposIds.length > 0) {
+    const placeholders = smartposIds.map(() => '?').join(',')
+    await executeUpdate(
+      `DELETE FROM products WHERE id > 0 AND id NOT IN (${placeholders})`,
+      smartposIds
+    )
+  }
+
   return { categories: categories.length, products: products.length }
 }
 

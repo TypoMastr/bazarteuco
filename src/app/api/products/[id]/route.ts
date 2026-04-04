@@ -135,9 +135,17 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     // Try to delete from SmartPOS
     try {
       const result = await deleteProduct(id)
+      
+      // Delete from local MySQL as well
+      try {
+        await executeUpdate('DELETE FROM stock WHERE product_id = ?', [numericId])
+        await executeUpdate('DELETE FROM products WHERE id = ?', [numericId])
+      } catch (err) {
+        console.error('[API] Error deleting from local MySQL:', err)
+      }
+      
       return NextResponse.json({ success: true, deleted: result !== null })
     } catch (err) {
-      // If SmartPOS fails, still delete locally if it was synced before
       return NextResponse.json({ error: 'Erro ao excluir produto da SmartPOS' }, { status: 500 })
     }
   } catch (error) {
