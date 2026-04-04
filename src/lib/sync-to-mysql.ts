@@ -207,6 +207,13 @@ export async function syncPendingProducts(): Promise<{ success: number; failed: 
         costValue: Number(product.cost_value),
         minimumStock: Number(product.minimum_stock),
         category: Number(product.category_id),
+        isFractional: false,
+        noStock: false,
+        isOpenValue: false,
+        showCatalog: true,
+        productOrigin: 'NACIONAL',
+        ncm: 5100010,
+        unit: 18008022,
       }
       
       const result = await fetchAPI('/products', {

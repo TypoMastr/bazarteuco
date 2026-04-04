@@ -80,6 +80,13 @@ export async function POST(request: NextRequest) {
       category: Number(productBody.category),
       observation: productBody.observation || undefined,
       detail: productBody.detail || undefined,
+      isFractional: false,
+      noStock: false,
+      isOpenValue: false,
+      showCatalog: true,
+      productOrigin: 'NACIONAL',
+      ncm: 5100010,
+      unit: 18008022,
     }
     
     console.log('[API] Sending to SmartPOS:', JSON.stringify(smartposPayload))
