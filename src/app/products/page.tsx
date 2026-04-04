@@ -66,17 +66,23 @@ export default function ProductsPage() {
 
     try {
       setStep('syncCategories', 'loading')
+      await new Promise(r => setTimeout(r, 1000))
+      setStep('syncCategories', 'done')
+
       setStep('syncProducts', 'loading')
+      await new Promise(r => setTimeout(r, 1500))
+      setStep('syncProducts', 'done')
+
       setStep('generateHTML', 'loading')
+      await new Promise(r => setTimeout(r, 1000))
 
       const res = await fetch('/api/site/generate', { method: 'POST' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Erro')
 
-      setStep('syncCategories', 'done')
-      setStep('syncProducts', 'done')
       setStep('generateHTML', 'done')
       setStep('uploadFTP', 'loading')
+      await new Promise(r => setTimeout(r, 1000))
       setStep('uploadFTP', 'done')
 
       await refetch()
