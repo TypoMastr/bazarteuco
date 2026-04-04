@@ -28,7 +28,7 @@ export function ProgressModal({ open, steps, currentStep, progress, error, onCom
   if (!open) return null
 
   const doneCount = steps.filter(s => s.status === 'done').length
-  const allDone = doneCount === steps.length && !error
+  const allDone = doneCount === steps.length && progress >= 100 && !error
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" style={{ animation: 'fadeIn 0.2s ease' }}>

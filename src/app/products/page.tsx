@@ -119,20 +119,11 @@ export default function ProductsPage() {
 
       setStep('generateHTML', 'done')
       setStep('uploadFTP', 'loading')
-      setUpdateProgress(75)
 
-      // Animate upload progress from 75% to 95% over 3 seconds
-      const uploadAnimPromise = animateProgress(75, 95, 3000)
-      const uploadPromise = new Promise<void>(r => setTimeout(r, 1000))
+      // Animate from 75% to 100% over 3 seconds
+      await animateProgress(75, 100, 3000)
 
-      await Promise.race([
-        uploadPromise.then(() => ({ type: 'done' } as const)),
-        uploadAnimPromise.then(() => ({ type: 'animDone' } as const)),
-      ])
-
-      setUpdateProgress(95)
       setStep('uploadFTP', 'done')
-      setUpdateProgress(100)
 
       await refetch()
     } catch (err: any) {
