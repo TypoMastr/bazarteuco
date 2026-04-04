@@ -53,8 +53,7 @@ export async function generateSiteHtml(): Promise<string> {
     'SELECT alpha_code, name, sell_value, category_id, category_name FROM products ORDER BY category_id, name'
   )
 
-  const visibleCategories = categories.filter(c => !c.oculto && c.show_catalog)
-  const visibleCategoryIds = new Set(visibleCategories.map(c => c.id))
+  const visibleCategories = categories.filter(c => !c.oculto)
 
   const catalogo = visibleCategories.map(cat => {
     const catProducts = products.filter(p => p.category_id === cat.id && p.name)
