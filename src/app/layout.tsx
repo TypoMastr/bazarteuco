@@ -18,10 +18,10 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'Bazar TEUCO',
-  description: 'Sistema de gerenciamento de vendas do Bazar TEUCO',
+  title: 'ADM Bazar',
+  description: 'Painel Administrativo do Bazar TEUCO',
   manifest: '/manifest.json',
-  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Bazar TEUCO' },
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'ADM Bazar' },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
