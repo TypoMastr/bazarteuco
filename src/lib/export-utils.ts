@@ -57,8 +57,8 @@ function formatCurrency(value: number): string {
 }
 
 function formatDateBR(dateStr: string): string {
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('pt-BR')
+  const [y, m, d] = dateStr.split('-')
+  return `${d}/${m}/${y}`
 }
 
 export function exportToPDF(
