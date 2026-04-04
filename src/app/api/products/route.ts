@@ -63,39 +63,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
     }
     
-    const { initialStock, category, ...productBody } = body
+    const { initialStock, ...productBody } = body
     
-    // Build category object for SmartPOS API
-    let categoryObj: any = null
-    if (category) {
-      // Fetch category details from SmartPOS
-      const catsRes = await fetch(`https://api.smartpos.app/v1/categories?page=1&size=100`, {
-        headers: {
-          'X-Api-Key-Id': process.env.SMARTPOS_API_KEY_ID!,
-          'X-Api-Key-Secret': process.env.SMARTPOS_API_KEY_SECRET!,
-        },
-      })
-      if (catsRes.ok) {
-        const catsData = await catsRes.json()
-        const cats = catsData.items || catsData.data || catsData || []
-        const found = cats.find((c: any) => c.id === category)
-        if (found) {
-          categoryObj = {
-            id: found.id,
-            name: found.name,
-            viewMode: found.viewMode || 'TEXT',
-            text: found.text || '',
-            showCatalog: found.showCatalog || false,
-          }
-        }
-      }
+    // SmartPOS API requires 'description' field (separate from 'name')
+    if (!productBody.description && productBody.name) {
+      productBody.description = productBody.name
     }
     
-    if (!categoryObj) {
-      return NextResponse.json({ error: 'Categoria não encontrada' }, { status: 400 })
+    // SmartPOS API requires 'category' as a number (ID), not an object
+    if (productBody.category && typeof productBody.category === 'number') {
+      productBody.category = productBody.category
     }
-    
-    productBody.category = categoryObj
     
     const data = await createProduct(productBody)
     
@@ -117,8 +95,8 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json(data)
-  } catch (error) {
+  } catch (error: any) {
     console.error('[API] Create product error:', error)
-    return NextResponse.json({ error: 'Erro ao criar produto' }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Erro ao criar produto' }, { status: 500 })
   }
 }

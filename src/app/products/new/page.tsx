@@ -143,6 +143,7 @@ export default function NewProductPage() {
     try {
       const body = {
         ...form,
+        description: form.name,
         sellValue: parseFloat(form.sellValue) || 0,
         costValue: parseFloat(form.costValue) || 0,
         minimumStock: parseFloat(form.minimumStock) || 0,
