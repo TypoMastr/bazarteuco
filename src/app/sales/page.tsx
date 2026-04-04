@@ -96,7 +96,7 @@ export default function SalesPage() {
     })
   }, [])
 
-  const { status: streamStatus, isCatchingUp, catchUpProgress: streamProgress, catchUpMessage: streamMessage } = useSalesStream({
+  const { status: streamStatus, isCatchingUp, catchUpProgress: streamProgress, catchUpMessage: streamMessage, dismissCatchUp } = useSalesStream({
     enabled: !!latestDate,
     onNewSale: handleNewSale,
   })
@@ -406,7 +406,7 @@ export default function SalesPage() {
         open={isCatchingUp}
         progress={streamProgress}
         message={streamMessage}
-        onComplete={() => {}}
+        onComplete={dismissCatchUp}
       />
     </div>
   )

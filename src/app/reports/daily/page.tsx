@@ -144,7 +144,7 @@ export default function DailyReportPage() {
     if (selectedDate) fetchReport(selectedDate, true)
   }, [selectedDate, fetchReport])
 
-  const { status: streamStatus, isCatchingUp, catchUpProgress: streamProgress, catchUpMessage: streamMessage } = useSalesStream({
+  const { status: streamStatus, isCatchingUp, catchUpProgress: streamProgress, catchUpMessage: streamMessage, dismissCatchUp } = useSalesStream({
     enabled: !!report,
     onNewSale: handleNewSale,
   })
@@ -360,7 +360,7 @@ export default function DailyReportPage() {
         open={isCatchingUp}
         progress={streamProgress}
         message={streamMessage}
-        onComplete={() => {}}
+        onComplete={dismissCatchUp}
       />
     </div>
   )

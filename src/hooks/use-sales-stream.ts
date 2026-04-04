@@ -145,6 +145,11 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
     catchUpMessage,
     lastSyncDate,
     hasSalesToday,
+    dismissCatchUp: () => {
+      catchUpDoneRef.current = true
+      setCatchUpDone(true)
+      setIsCatchingUp(false)
+    },
     triggerSync: () => {
       catchUpDoneRef.current = false
       setCatchUpDone(false)
