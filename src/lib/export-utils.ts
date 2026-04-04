@@ -61,6 +61,9 @@ export interface ReportData {
   reportType?: 'daily' | 'monthly' | 'annual'
 }
 
+const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 }
@@ -68,6 +71,50 @@ function formatCurrency(value: number): string {
 function formatDateBR(dateStr: string): string {
   const [y, m, d] = dateStr.split('-')
   return `${d}/${m}/${y}`
+}
+
+function getReportType(report: ReportData): 'daily' | 'monthly' | 'annual' {
+  if (report.date) return 'daily'
+  if (report.year && report.month) return 'monthly'
+  if (report.year) return 'annual'
+  return 'daily'
+}
+
+function getReportTitle(report: ReportData): string {
+  const type = getReportType(report)
+  if (type === 'daily') return 'Relatorio Diario de Vendas'
+  if (type === 'monthly') return 'Relatorio Mensal de Vendas'
+  return 'Relatorio Anual de Vendas'
+}
+
+function getReportSubtitle(report: ReportData): string {
+  const type = getReportType(report)
+  if (type === 'daily') return formatDateBR(report.date!)
+  if (type === 'monthly') return `${MONTH_NAMES[report.month! - 1]}/${report.year}`
+  return `${report.year}`
+}
+
+function getReportPeriod(report: ReportData): string {
+  const type = getReportType(report)
+  const currentYear = new Date().getFullYear()
+  const currentMonth = new Date().getMonth() + 1
+  const currentDay = new Date().getDate()
+
+  if (type === 'monthly') {
+    const y = report.year!
+    const m = report.month!
+    const lastDay = new Date(y, m, 0).getDate()
+    return `Periodo: 01/${String(m).padStart(2, '0')}/${y} ate ${String(lastDay).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`
+  }
+  if (type === 'annual') {
+    const y = report.year!
+    const isCurrentYear = y === currentYear
+    if (isCurrentYear) {
+      return `Periodo: 01/01/${y} ate ${String(currentDay).padStart(2, '0')}/${String(currentMonth).padStart(2, '0')}/${y}`
+    }
+    return `Periodo: 01/01/${y} ate 31/12/${y}`
+  }
+  return ''
 }
 
 export function exportToPDF(
@@ -350,7 +397,6 @@ function formatDateTimeBR(dateISO: string): { date: string; time: string } {
 }
 
 function exportReportPDF(doc: jsPDF, report: ReportData): void {
-  const dateLabel = report.date ? formatDateBR(report.date) : 'Relatório'
   const summary = report.summary
   const products = report.products || []
   const extra = (report as any).extraData || {}
@@ -359,6 +405,7 @@ function exportReportPDF(doc: jsPDF, report: ReportData): void {
   const eventosRevenue = extra.eventosRevenue ?? 0
   const showGiraDaMata = extra.showGiraDaMata ?? giraDaMataRevenue > 0
   const showEventos = extra.showEventos ?? eventosRevenue > 0
+  const reportType = getReportType(report)
 
   const pageWidth = doc.internal.pageSize.getWidth()
   const usableWidth = pageWidth - 28
@@ -367,23 +414,35 @@ function exportReportPDF(doc: jsPDF, report: ReportData): void {
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(34, 139, 34)
-  const titleText = 'Relatorio Diario de Vendas'
+  const titleText = getReportTitle(report)
   const titleW = doc.getTextWidth(titleText)
   doc.text(titleText, (pageWidth - titleW) / 2, 16)
 
   doc.setFontSize(11)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(120, 120, 120)
-  const dateW = doc.getTextWidth(dateLabel)
-  doc.text(dateLabel, (pageWidth - dateW) / 2, 24)
+  const subtitleText = getReportSubtitle(report)
+  const subtitleW = doc.getTextWidth(subtitleText)
+  doc.text(subtitleText, (pageWidth - subtitleW) / 2, 24)
+
+  // Period line for monthly/annual
+  let startY = 27
+  const period = getReportPeriod(report)
+  if (period) {
+    doc.setFontSize(8)
+    doc.setTextColor(140, 140, 140)
+    const periodW = doc.getTextWidth(period)
+    doc.text(period, (pageWidth - periodW) / 2, 29)
+    startY = 32
+  }
 
   // Green line
   doc.setDrawColor(34, 139, 34)
   doc.setLineWidth(1)
-  doc.line(14, 27, pageWidth - 14, 27)
+  doc.line(14, startY, pageWidth - 14, startY)
 
   // Total card
-  let startY = 34
+  startY += 7
   doc.setFillColor(230, 250, 235)
   doc.roundedRect(14, startY, usableWidth, 16, 2, 2, 'F')
   doc.setDrawColor(34, 139, 34)
@@ -661,63 +720,66 @@ function generateWhatsAppMessage(
     }
     case 'report': {
       const report = data as ReportData
-      const dateLabel = report.date ? formatDateBR(report.date) : 'Relatório'
       const summary = report.summary
+      const reportType = getReportType(report)
+      const extra = (report as any).extraData || {}
+      const bazarRevenue = extra.correctedBazarRevenue ?? summary.bazarRevenue ?? 0
+      const giraDaMataRevenue = extra.giraDaMataRevenue ?? 0
+      const eventosRevenue = extra.eventosRevenue ?? 0
+      const showGiraDaMata = extra.showGiraDaMata ?? giraDaMataRevenue > 0
+      const showEventos = extra.showEventos ?? eventosRevenue > 0
 
-      lines.push(`*Relatório de Vendas*`)
-      lines.push(`*${dateLabel}*`)
+      lines.push(`*${getReportTitle(report)}*`)
+      lines.push(`*${getReportSubtitle(report)}*`)
+      const period = getReportPeriod(report)
+      if (period) lines.push(period)
       lines.push('')
+
       lines.push(`*RESUMO*`)
-      lines.push(`Total: ${summary.totalSales} vendas | ${formatCurrency(summary.totalRevenue)}`)
-      if (summary.bazarRevenue) lines.push(`Bazar: ${formatCurrency(summary.bazarRevenue)}`)
-      if (summary.rifaRevenue) lines.push(`Rifa: ${formatCurrency(summary.rifaRevenue)}`)
-      if (summary.avulsoRevenue) lines.push(`Avulsos: ${formatCurrency(summary.avulsoRevenue)}`)
-      if (summary.doacaoRevenue) lines.push(`Doações: ${formatCurrency(summary.doacaoRevenue)}`)
+      lines.push(`Vendas: ${summary.totalSales}`)
+      lines.push(`Receita: ${formatCurrency(summary.totalRevenue)}`)
+      lines.push(`Bazar: ${formatCurrency(bazarRevenue)}`)
+      lines.push(`Rifa: ${formatCurrency(summary.rifaRevenue || 0)}`)
+      lines.push(`Avulsos: ${formatCurrency(summary.avulsoRevenue || 0)}`)
+      lines.push(`Doacoes: ${formatCurrency(summary.doacaoRevenue || 0)}`)
+      if (showGiraDaMata) lines.push(`Gira da Mata: ${formatCurrency(giraDaMataRevenue)}`)
+      if (showEventos) lines.push(`Eventos/Cantina: ${formatCurrency(eventosRevenue)}`)
       lines.push('')
 
-      const sales = report.sales || []
-      if (sales.length > 0) {
-        lines.push('━━━━━━━━━━━━━━━━━━')
-        sales.forEach((sale) => {
-          const { date: saleDate, time: saleTime } = formatDateTimeBR(sale.creationDate)
-          const saleLabel = sale.uniqueIdentifier ? `#${sale.uniqueIdentifier}` : `#${sale.saleNumber}`
-
-          lines.push('')
-        lines.push(`VENDA ${saleLabel} • ${saleDate} • ${saleTime}`)
-          sale.items.forEach(item => {
-            const itemTotal = formatCurrency(item.total)
-            if (item.quantity > 1) {
-              lines.push(`• ${item.productName} (${item.quantity}x) - ${itemTotal}`)
-            } else {
-              lines.push(`• ${item.productName} - ${itemTotal}`)
-            }
-          })
-          lines.push(`*Total: ${formatCurrency(sale.totalAmount)}*`)
+      if (reportType === 'daily') {
+        const sales = report.sales || []
+        if (sales.length > 0) {
           lines.push('━━━━━━━━━━━━━━━━━━')
-        })
+          sales.forEach((sale) => {
+            const { date: saleDate, time: saleTime } = formatDateTimeBR(sale.creationDate)
+            const saleLabel = sale.uniqueIdentifier ? `#${sale.uniqueIdentifier}` : `#${sale.saleNumber}`
 
-        const products = report.products || []
-        const sorted = [...products].sort((a, b) => b.quantity - a.quantity)
-        const totalQty = sorted.reduce((sum, p) => sum + p.quantity, 0)
-
-        lines.push('')
-        lines.push(`*TODOS OS PRODUTOS VENDIDOS* (${sorted.length} itens | ${totalQty} unidades)`)
-        lines.push('')
-        sorted.forEach(p => {
-          lines.push(`• ${p.name} (${p.quantity}x) - ${formatCurrency(p.total)}`)
-        })
-      } else {
-        const products = report.products || report.topProducts || []
-        const sorted = [...products].sort((a, b) => b.quantity - a.quantity)
-        const totalQty = sorted.reduce((sum, p) => sum + p.quantity, 0)
-
-        lines.push('')
-        lines.push(`*TODOS OS PRODUTOS VENDIDOS* (${sorted.length} itens | ${totalQty} unidades)`)
-        lines.push('')
-        sorted.forEach(p => {
-          lines.push(`• ${p.name} (${p.quantity}x) - ${formatCurrency(p.total)}`)
-        })
+            lines.push('')
+            lines.push(`VENDA ${saleLabel} • ${saleDate} • ${saleTime}`)
+            sale.items.forEach(item => {
+              const itemTotal = formatCurrency(item.total)
+              if (item.quantity > 1) {
+                lines.push(`• ${item.productName} (${item.quantity}x) - ${itemTotal}`)
+              } else {
+                lines.push(`• ${item.productName} - ${itemTotal}`)
+              }
+            })
+            lines.push(`*Total: ${formatCurrency(sale.totalAmount)}*`)
+            lines.push('━━━━━━━━━━━━━━━━━━')
+          })
+        }
       }
+
+      const products = report.products || report.topProducts || []
+      const sorted = [...products].sort((a, b) => b.quantity - a.quantity)
+      const totalQty = sorted.reduce((sum, p) => sum + p.quantity, 0)
+
+      lines.push('')
+      lines.push(`*TODOS OS PRODUTOS VENDIDOS* (${sorted.length} itens | ${totalQty} unidades)`)
+      lines.push('')
+      sorted.forEach(p => {
+        lines.push(`• ${p.name} (${p.quantity}x) - ${formatCurrency(p.total)}`)
+      })
       break
     }
   }
