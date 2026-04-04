@@ -18,7 +18,9 @@ async function fetchAPI(path: string, options: RequestInit = {}) {
     const error = await res.text()
     throw new Error(`SmartPOS API Error: ${res.status} - ${error}`)
   }
-  return res.json()
+  const text = await res.text()
+  if (!text) return null
+  return JSON.parse(text)
 }
 
 export async function getSales(params?: Record<string, string>) {

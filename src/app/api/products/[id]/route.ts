@@ -36,12 +36,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    await deleteProduct(id)
+    const result = await deleteProduct(id)
     
     // Sync para MySQL em background (não bloqueia a resposta)
     syncProductsToMySQL().catch(err => console.error('[Sync] Products sync error:', err))
     
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, deleted: result !== null })
   } catch (error) {
     console.error('[API] Delete product error:', error)
     return NextResponse.json({ error: 'Erro ao excluir produto' }, { status: 500 })
