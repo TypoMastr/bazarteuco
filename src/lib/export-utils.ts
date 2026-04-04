@@ -222,80 +222,98 @@ function exportSalesPDF(doc: jsPDF, data: any): void {
   const saleItemsMap: Record<string, any[]> = data.saleItems || {}
   const total = sales.reduce((sum, s) => sum + (s.totalAmount || 0), 0)
 
-  doc.setFontSize(16)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(34, 139, 34)
-  doc.text('Vendas do Dia', 14, 16)
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(100, 100, 100)
-  doc.text(`Vendas: ${sales.length}  |  Receita: ${formatCurrency(total)}`, 14, 24)
+  doc.text(`Vendas: ${sales.length}  |  Receita: ${formatCurrency(total)}`, 14, 16)
 
-  let startY = 32
+  const tableRows: (string | { content: string; styles: Record<string, any> })[][] = []
 
   sales.forEach((sale) => {
     const uid = sale.uniqueIdentifier || sale.id
     const saleLabel = sale.orderName || (sale.uniqueIdentifier ? `#${sale.uniqueIdentifier}` : `#${uid.slice(-6)}`)
     const { date: saleDate, time: saleTime } = formatDateTimeBR(sale.creationDate)
 
-    if (startY > 250) {
-      doc.addPage()
-      startY = 15
-    }
-
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(34, 139, 34)
-    doc.text(`Venda ${saleLabel}`, 14, startY)
-    doc.setFontSize(8)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(120, 120, 120)
-    doc.text(`${saleDate}  •  ${saleTime}`, 75, startY)
-    startY += 2
-
     const items = saleItemsMap[uid] || sale.items || []
-    if (items.length > 0) {
-      const tableData = items.map((item: any) => [
-        item.product?.name || item.productName || 'Valor Avulso',
-        (item.quantity || 1).toString(),
-        formatCurrency(item.unitPrice || item.listPrice || item.usedPrice || 0),
-        formatCurrency(item.netItem || item.total || 0),
-      ])
 
-      autoTable(doc, {
-        head: [['Produto', 'Qtd', 'Unitario', 'Total']],
-        body: tableData,
-        startY,
-        styles: { fontSize: 7, cellPadding: 1.5 },
-        headStyles: {
-          fillColor: [34, 139, 34],
-          textColor: 255,
-          fontStyle: 'bold',
-          fontSize: 7,
-        },
-        columnStyles: {
-          0: { cellWidth: 80 },
-          1: { cellWidth: 15, halign: 'center' },
-          2: { cellWidth: 30, halign: 'right' },
-          3: { cellWidth: 30, halign: 'right' },
-        },
-        margin: { left: 14, right: 14 },
-        theme: 'grid',
+    if (items.length > 0) {
+      items.forEach((item: any, idx: number) => {
+        const itemName = item.product?.name || item.productName || 'Valor Avulso'
+        const qty = item.quantity || 1
+        const itemLabel = qty > 1 ? `${itemName} (${qty}x)` : itemName
+        const itemValue = formatCurrency(item.netItem || item.total || 0)
+
+        if (idx === 0) {
+          tableRows.push([
+            saleLabel,
+            saleDate,
+            saleTime,
+            itemLabel,
+            itemValue,
+          ])
+        } else {
+          tableRows.push([
+            { content: '', styles: { fillColor: [245, 245, 245] } },
+            { content: '', styles: { fillColor: [245, 245, 245] } },
+            { content: '', styles: { fillColor: [245, 245, 245] } },
+            { content: itemLabel, styles: { fillColor: [245, 245, 245] } },
+            { content: itemValue, styles: { fillColor: [245, 245, 245] } },
+          ])
+        }
       })
 
-      startY = (doc as any).lastAutoTable.finalY + 2
+      tableRows.push([
+        { content: '', styles: { fontStyle: 'bold' } },
+        { content: '', styles: { fontStyle: 'bold' } },
+        { content: '', styles: { fontStyle: 'bold' } },
+        { content: 'Total', styles: { fontStyle: 'bold', textColor: [34, 139, 34], fillColor: [230, 250, 235] } },
+        { content: formatCurrency(sale.totalAmount || 0), styles: { fontStyle: 'bold', textColor: [34, 139, 34], fillColor: [230, 250, 235], halign: 'right' } },
+      ])
+
+      tableRows.push([
+        { content: '', styles: { fillColor: [240, 240, 240], cellPadding: 1 } },
+        { content: '', styles: { fillColor: [240, 240, 240], cellPadding: 1 } },
+        { content: '', styles: { fillColor: [240, 240, 240], cellPadding: 1 } },
+        { content: '', styles: { fillColor: [240, 240, 240], cellPadding: 1 } },
+        { content: '', styles: { fillColor: [240, 240, 240], cellPadding: 1 } },
+      ])
+    } else {
+      tableRows.push([
+        saleLabel,
+        saleDate,
+        saleTime,
+        '—',
+        formatCurrency(sale.totalAmount || 0),
+      ])
     }
+  })
 
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(34, 139, 34)
-    doc.text(`Total: ${formatCurrency(sale.totalAmount || 0)}`, 14, startY)
-    startY += 4
-
-    doc.setDrawColor(220, 220, 220)
-    doc.setLineWidth(0.2)
-    doc.line(14, startY, 196, startY)
-    startY += 4
+  autoTable(doc, {
+    head: [['Venda', 'Data', 'Horario', 'Produto', 'Valor']],
+    body: tableRows,
+    startY: 22,
+    styles: { fontSize: 7, cellPadding: 2 },
+    headStyles: {
+      fillColor: [34, 139, 34],
+      textColor: 255,
+      fontStyle: 'bold',
+      fontSize: 7,
+    },
+    columnStyles: {
+      0: { cellWidth: 20, fontStyle: 'bold' },
+      1: { cellWidth: 28 },
+      2: { cellWidth: 18, halign: 'center' },
+      3: { cellWidth: 85 },
+      4: { cellWidth: 28, halign: 'right' },
+    },
+    margin: { left: 10, right: 10 },
+    theme: 'grid',
+    didParseCell: function(data) {
+      if (data.section === 'body' && data.column.index === 0) {
+        data.cell.styles.textColor = [34, 139, 34]
+        data.cell.styles.fontStyle = 'bold'
+      }
+    },
   })
 }
 
