@@ -1,4 +1,4 @@
-import { getPool, executeUpdate } from './mysql-client'
+import { getPool, executeUpdate, executeQuery } from './mysql-client'
 
 const API_BASE = 'https://api.smartpos.app/v1'
 
@@ -10,9 +10,9 @@ function getHeaders() {
   }
 }
 
-async function fetchAPI(path: string) {
+async function fetchAPI(path: string, options: RequestInit = {}) {
   const url = `${API_BASE}${path}`
-  const res = await fetch(url, { headers: getHeaders() })
+  const res = await fetch(url, { headers: getHeaders(), ...options })
   if (!res.ok) throw new Error(`API Error: ${res.status}`)
   return res.json()
 }
@@ -181,4 +181,52 @@ export async function syncCategoriesToMySQL(): Promise<number> {
   }
 
   return categoriesSynced
+}
+
+export async function syncPendingProducts(): Promise<{ success: number; failed: number }> {
+  const pool = getPool()
+  
+  // Get products with negative ID (locally created, pending sync)
+  const pendingProducts = await executeQuery<any>(
+    'SELECT * FROM products WHERE id < 0'
+  )
+  
+  if (pendingProducts.length === 0) {
+    return { success: 0, failed: 0 }
+  }
+  
+  let success = 0
+  let failed = 0
+  
+  for (const product of pendingProducts) {
+    try {
+      const payload = {
+        alphaCode: product.alpha_code,
+        description: product.name,
+        sellValue: Number(product.sell_value),
+        costValue: Number(product.cost_value),
+        minimumStock: Number(product.minimum_stock),
+        category: Number(product.category_id),
+      }
+      
+      const result = await fetchAPI('/products', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+      
+      // Update with real SmartPOS ID
+      await executeUpdate(
+        'UPDATE products SET id = ?, api_data = ?, synced_at = NOW() WHERE id = ?',
+        [result.id, JSON.stringify(result), product.id]
+      )
+      
+      console.log(`[Sync] Synced product ${product.alpha_code} with SmartPOS ID ${result.id}`)
+      success++
+    } catch (err) {
+      console.error(`[Sync] Failed to sync product ${product.alphaCode}:`, err)
+      failed++
+    }
+  }
+  
+  return { success, failed }
 }

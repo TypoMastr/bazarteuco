@@ -127,6 +127,11 @@ export async function POST(request: NextRequest) {
     // Sync para MySQL em background (não bloqueia a resposta)
     if (!createdLocally) {
       syncProductsToMySQL().catch(err => console.error('[Sync] Products sync error:', err))
+    } else {
+      // Try to sync pending products immediately
+      import('@/lib/sync-to-mysql').then(({ syncPendingProducts }) => {
+        syncPendingProducts().catch(err => console.error('[Sync] Pending sync error:', err))
+      }).catch(() => {})
     }
     
     // Definir estoque inicial no MySQL
