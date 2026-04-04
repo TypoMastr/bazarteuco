@@ -181,10 +181,12 @@ export async function syncProductsFromAPI(): Promise<{ synced: number; failed: n
     }
   }
 
-  await executeUpdate(
-    `INSERT INTO sync_log (entity_type, status, details, created_at) VALUES ('products', 'SYNCED', ?, NOW())`,
-    [`Synced: ${synced}, Failed: ${failed}`]
-  )
+  try {
+    await executeUpdate(
+      `INSERT INTO sync_log (entity_type, status, details, created_at) VALUES ('products', 'SYNCED', ?, NOW())`,
+      [`Synced: ${synced}, Failed: ${failed}`]
+    )
+  } catch {}
 
   return { synced, failed }
 }

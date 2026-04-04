@@ -77,8 +77,9 @@ export default function StockPage() {
     try {
       const res = await fetch('/api/stock/sync', { method: 'POST' })
       const data = await res.json()
-      if (data.success) {
+      if (res.ok && data.success) {
         toast.success(`${data.synced} produtos sincronizados`)
+        await fetchStock()
       } else {
         toast.error(data.error || 'Erro ao sincronizar')
       }
@@ -86,7 +87,6 @@ export default function StockPage() {
       console.error('Sync error:', err)
       toast.error('Erro ao sincronizar')
     } finally {
-      await fetchStock()
       setSyncing(false)
     }
   }
