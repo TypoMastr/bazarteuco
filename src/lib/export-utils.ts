@@ -746,36 +746,19 @@ function generateWhatsAppMessage(
       if (showEventos) lines.push(`Eventos/Cantina: ${formatCurrency(eventosRevenue)}`)
       lines.push('')
 
-      if (reportType === 'daily') {
-        const sales = report.sales || []
-        if (sales.length > 0) {
-          lines.push('━━━━━━━━━━━━━━━━━━')
-          sales.forEach((sale) => {
-            const { date: saleDate, time: saleTime } = formatDateTimeBR(sale.creationDate)
-            const saleLabel = sale.uniqueIdentifier ? `#${sale.uniqueIdentifier}` : `#${sale.saleNumber}`
-
-            lines.push('')
-            lines.push(`VENDA ${saleLabel} • ${saleDate} • ${saleTime}`)
-            sale.items.forEach(item => {
-              const itemTotal = formatCurrency(item.total)
-              if (item.quantity > 1) {
-                lines.push(`• ${item.productName} (${item.quantity}x) - ${itemTotal}`)
-              } else {
-                lines.push(`• ${item.productName} - ${itemTotal}`)
-              }
-            })
-            lines.push(`*Total: ${formatCurrency(sale.totalAmount)}*`)
-            lines.push('━━━━━━━━━━━━━━━━━━')
-          })
-        }
-      }
-
       const products = report.products || report.topProducts || []
-      const sorted = [...products].sort((a, b) => b.quantity - a.quantity)
+      const sortField = extra.sortField || 'quantity'
+      const sortDir = extra.sortDir || 'desc'
+      const sortLabel = sortField === 'quantity' ? 'Qtd' : 'Valor'
+      const sorted = [...products].sort((a, b) => {
+        const aVal = a[sortField as 'quantity' | 'total'] as number
+        const bVal = b[sortField as 'quantity' | 'total'] as number
+        return sortDir === 'desc' ? bVal - aVal : aVal - bVal
+      })
       const totalQty = sorted.reduce((sum, p) => sum + p.quantity, 0)
 
       lines.push('')
-      lines.push(`*TODOS OS PRODUTOS VENDIDOS* (${sorted.length} itens | ${totalQty} unidades)`)
+      lines.push(`*TODOS OS PRODUTOS VENDIDOS* (${sorted.length} itens | ${totalQty} unidades | ${sortLabel} ${sortDir === 'desc' ? '▼' : '▲'})`)
       lines.push('')
       sorted.forEach(p => {
         lines.push(`• ${p.name} (${p.quantity}x) - ${formatCurrency(p.total)}`)
@@ -783,9 +766,6 @@ function generateWhatsAppMessage(
       break
     }
   }
-
-  lines.push('')
-  lines.push('_Exportado via Bazar TEUCO Dashboard_')
 
   return lines.join('\n')
 }
