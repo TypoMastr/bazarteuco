@@ -13,6 +13,7 @@ import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 import { getCategoryPrefix, findNextCode, validateCodeWithException } from '@/lib/code-suggestion'
 import { PageHeader } from '@/components/page-header'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 interface Category {
   id: number
@@ -43,6 +44,7 @@ export default function EditProductPage() {
     detail: { text: '', viewMode: 'TEXT', color: '#ffffff' },
   })
   const [currentStock, setCurrentStock] = useState<number>(0)
+  const [productData, setProductData] = useState<any>(null)
 
   useEffect(() => {
     async function loadData() {
@@ -67,6 +69,8 @@ export default function EditProductPage() {
         }
         
         const [data, categoriesData] = await Promise.all([productRes.json(), categoriesRes.json()])
+        
+        setProductData(data)
         
         const categoryId = String(data.category?.id || data.category || '')
         
@@ -242,10 +246,10 @@ export default function EditProductPage() {
   }
 
   const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   async function handleDelete() {
-    const confirmed = window.confirm('Tem certeza que deseja EXCLUIR este produto? Esta ação não pode ser desfeita.')
-    if (!confirmed) return
+    setShowDeleteConfirm(false)
     setDeleting(true)
     try {
       const res = await fetch(`/api/products/${id}`, { method: 'DELETE' })
@@ -469,7 +473,7 @@ export default function EditProductPage() {
                 </Link>
                 <button
                   type="button"
-                  onClick={handleDelete}
+                  onClick={() => setShowDeleteConfirm(true)}
                   disabled={deleting}
                   className="flex items-center justify-center gap-2 h-12 w-full rounded-lg border-2 border-red-200 bg-red-50 text-red-600 font-black text-xs uppercase tracking-wider hover:bg-red-100 transition-colors disabled:opacity-50"
                 >
@@ -480,6 +484,17 @@ export default function EditProductPage() {
             </form>
           </Card>
         </div>
+
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          title="Excluir Produto"
+          message={`Tem certeza que deseja EXCLUIR "${productData?.name || id}"? Esta ação não pode ser desfeita.`}
+          confirmLabel="Excluir"
+          cancelLabel="Cancelar"
+          variant="danger"
+          onConfirm={handleDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
 
         <div className="md:col-span-4 space-y-8">
            <Card variant="teuco" className="p-8 bg-white border border-black/[0.05] shadow-sm">
