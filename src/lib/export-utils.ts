@@ -604,7 +604,7 @@ function generateWhatsAppMessage(
 ): string {
   const lines: string[] = []
 
-  if (type !== 'sales') {
+  if (type !== 'sales' && type !== 'report') {
     lines.push(`*BAZAR TEUCO - ${getPageTitle(type).replace('Bazar TEUCO - ', '')}*`)
     lines.push(`Data: ${new Date().toLocaleDateString('pt-BR')}`)
     lines.push('')
