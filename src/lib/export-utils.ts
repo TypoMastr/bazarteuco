@@ -492,9 +492,13 @@ function generateWhatsAppMessage(
   type: ExportType,
   data: ProductData[] | StockData[] | SaleData[] | ReportData
 ): string {
-  const lines: string[] = [`*BAZAR TEUCO - ${getPageTitle(type).replace('Bazar TEUCO - ', '')}*`]
-  lines.push(`Data: ${new Date().toLocaleDateString('pt-BR')}`)
-  lines.push('')
+  const lines: string[] = []
+
+  if (type !== 'sales') {
+    lines.push(`*BAZAR TEUCO - ${getPageTitle(type).replace('Bazar TEUCO - ', '')}*`)
+    lines.push(`Data: ${new Date().toLocaleDateString('pt-BR')}`)
+    lines.push('')
+  }
 
   switch (type) {
     case 'products': {
