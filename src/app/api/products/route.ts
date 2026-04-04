@@ -70,12 +70,22 @@ export async function POST(request: NextRequest) {
       productBody.description = productBody.name
     }
     
-    // SmartPOS API requires 'category' as a number (ID), not an object
-    if (productBody.category && typeof productBody.category === 'number') {
-      productBody.category = productBody.category
+    // Remove fields that SmartPOS API doesn't accept
+    const { observation, detail, ...cleanBody } = productBody
+    
+    // Ensure category is a number
+    if (cleanBody.category) {
+      cleanBody.category = Number(cleanBody.category)
     }
     
-    const data = await createProduct(productBody)
+    // Ensure numeric fields are numbers
+    if (cleanBody.sellValue) cleanBody.sellValue = Number(cleanBody.sellValue)
+    if (cleanBody.costValue) cleanBody.costValue = Number(cleanBody.costValue)
+    if (cleanBody.minimumStock) cleanBody.minimumStock = Number(cleanBody.minimumStock)
+    
+    console.log('[API] Sending to SmartPOS:', JSON.stringify(cleanBody))
+    const data = await createProduct(cleanBody)
+    console.log('[API] SmartPOS response:', JSON.stringify(data))
     
     // Sync para MySQL em background (não bloqueia a resposta)
     syncProductsToMySQL().catch(err => console.error('[Sync] Products sync error:', err))

@@ -136,13 +136,14 @@ export default function NewProductPage() {
     return Object.keys(errs).length === 0
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!validate()) return
     setLoading(true)
     try {
+      const { detail, ...formWithoutDetail } = form
       const body = {
-        ...form,
+        ...formWithoutDetail,
         description: form.name,
         sellValue: parseFloat(form.sellValue) || 0,
         costValue: parseFloat(form.costValue) || 0,
