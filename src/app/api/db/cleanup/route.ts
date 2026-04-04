@@ -5,6 +5,7 @@ export async function POST() {
   try {
     await executeUpdate('SET FOREIGN_KEY_CHECKS = 0')
     
+    await executeUpdate('DELETE FROM webauthn_credentials')
     await executeUpdate('DELETE FROM sale_items_cache')
     await executeUpdate('DELETE FROM sales_cache')
     await executeUpdate('DELETE FROM stock_history')
