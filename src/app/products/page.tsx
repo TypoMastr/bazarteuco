@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { formatCurrency, cn } from '@/lib/utils'
-import { Search, Plus, AlertCircle, Package, Edit2, Trash2, X, Barcode, Check, FolderOpen, ArrowDownAZ, Hash, PackageCheck, RefreshCw, ChevronDown, ChevronRight, CloudUpload} from 'lucide-react'
+import { Search, Plus, AlertCircle, Package, Edit2, X, Barcode, FolderOpen, ArrowDownAZ, Hash, RefreshCw, ChevronDown, ChevronRight, CloudUpload} from 'lucide-react'
 import Link from 'next/link'
 import { useState, useMemo } from 'react'
 import { useToast } from '@/components/ui/toast'
@@ -26,12 +26,8 @@ export default function ProductsPage() {
   const { data: categories } = useCategories()
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<SortOption>('code')
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
-  const [mutating, setMutating] = useState<number | null>(null)
-  const [deletingMultiple, setDeletingMultiple] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [updatingSite, setUpdatingSite] = useState(false)
-  const [updateProgress, setUpdateProgress] = useState(0)
   const [updateSteps, setUpdateSteps] = useState<Array<{ id: string; label: string; icon: any; status: 'pending' | 'loading' | 'done' | 'error' }>>([])
   const [updateCurrentStep, setUpdateCurrentStep] = useState('')
   const [updateError, setUpdateError] = useState<string | null>(null)
@@ -60,15 +56,12 @@ export default function ProductsPage() {
 
     setUpdateSteps(steps)
     setUpdateCurrentStep('syncCategories')
-    setUpdateProgress(0)
     setUpdateError(null)
     setUpdatingSite(true)
 
     async function setStep(id: string, status: 'loading' | 'done' | 'error') {
       setUpdateSteps(prev => prev.map(s => s.id === id ? { ...s, status } : s))
       if (status === 'loading') setUpdateCurrentStep(id)
-      const idx = steps.findIndex(s => s.id === id)
-      if (status === 'done') setUpdateProgress(Math.round(((idx + 1) / steps.length) * 100))
     }
 
     try {
@@ -90,23 +83,16 @@ export default function ProductsPage() {
       await new Promise(r => setTimeout(r, 800))
 
       setStep('uploadFTP', 'done')
-      setUpdateProgress(100)
       await refetch()
       toast.success('Site atualizado com sucesso!')
-
-      setTimeout(() => {
-        setUpdatingSite(false)
-      }, 1500)
     } catch (err: any) {
-      const currentIdx = steps.findIndex(s => s.id === updateCurrentStep)
-      if (currentIdx >= 0) {
-        setStep(updateCurrentStep, 'error')
-      }
+      setStep(updateCurrentStep, 'error')
       setUpdateError(err.message || 'Erro ao atualizar site')
-      setTimeout(() => {
-        setUpdatingSite(false)
-      }, 3000)
     }
+  }
+
+  function handleUpdateSiteComplete() {
+    setUpdatingSite(false)
   }
 
   const filtered = useMemo(() => {
@@ -158,100 +144,6 @@ export default function ProductsPage() {
     }
     return groups.sort((a, b) => a.name.localeCompare(b.name))
   }, [sortedProducts])
-
-  function toggleSelect(id: number) {
-    setSelectedIds(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(id)) {
-        newSet.delete(id)
-      } else {
-        newSet.add(id)
-      }
-      return newSet
-    })
-  }
-
-  function selectAll(categoryProducts: any[]) {
-    const allIds = categoryProducts.map((p: any) => p.id)
-    const allSelected = allIds.every((id: number) => selectedIds.has(id))
-    
-    setSelectedIds(prev => {
-      const newSet = new Set(prev)
-      if (allSelected) {
-        allIds.forEach((id: number) => newSet.delete(id))
-      } else {
-        allIds.forEach((id: number) => newSet.add(id))
-      }
-      return newSet
-    })
-  }
-
-  async function handleDelete(id: number) {
-    const confirmed = window.confirm('Tem certeza que deseja EXCLUIR este produto? Esta ação não pode ser desfeita.')
-    if (!confirmed) return
-    setMutating(id)
-    try {
-      const res = await fetch(`/api/products/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Erro')
-      toast.success('Produto excluído')
-      refetch()
-    } catch {
-      toast.error('Erro ao excluir')
-    } finally {
-      setMutating(null)
-    }
-  }
-
-  async function handleDeleteMultiple() {
-    const count = selectedIds.size
-    const confirmed = window.confirm(`Tem certeza que deseja EXCLUIR ${count} produto(s)? Esta ação não pode ser desfeita.`)
-    if (!confirmed) return
-
-    setDeletingMultiple(true)
-    let successCount = 0
-    let failCount = 0
-
-    for (const id of selectedIds) {
-      try {
-        const res = await fetch(`/api/products/${id}`, { method: 'DELETE' })
-        if (res.ok) {
-          successCount++
-        } else {
-          failCount++
-        }
-      } catch {
-        failCount++
-      }
-    }
-
-    setSelectedIds(new Set())
-    refetch()
-    setDeletingMultiple(false)
-
-    if (failCount === 0) {
-      toast.success(`${successCount} produto(s) excluído(s)`)
-    } else {
-      toast.error(`${successCount} excluído(s), ${failCount} erro(s)`)
-    }
-  }
-
-  async function handleArchive(id: number, archived: boolean) {
-    setMutating(id)
-    try {
-      const res = await fetch(`/api/products/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isArchived: archived }),
-      })
-      if (!res.ok) throw new Error('Erro')
-      toast.success(archived ? 'Arquivado' : 'Reativado')
-      refetch()
-    } catch {
-      toast.error('Erro ao atualizar')
-    } finally {
-      setMutating(null)
-    }
-  }
 
   function toggleCategory(name: string) {
     setCollapsedCategories(prev => {
@@ -350,8 +242,6 @@ export default function ProductsPage() {
       {/* Products grouped by Category */}
       <div className="space-y-6">
         {productsByCategory.map((group) => {
-          const allSelected = group.products.length > 0 && group.products.every((p: any) => selectedIds.has(p.id))
-          const someSelected = group.products.some((p: any) => selectedIds.has(p.id))
           const isCollapsed = collapsedCategories.has(group.name)
 
           return (
@@ -373,20 +263,6 @@ export default function ProductsPage() {
                 <span className="text-sm font-bold text-[var(--teuco-green)] uppercase flex-1 text-left">
                   {group.name}
                 </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    selectAll(group.products)
-                  }}
-                  className={cn(
-                    "w-5 h-5 rounded border-2 flex items-center justify-center transition-colors shrink-0",
-                    allSelected ? "bg-[var(--teuco-green)] border-[var(--teuco-green)]" : 
-                    someSelected ? "bg-[var(--teuco-green)]/50 border-[var(--teuco-green)]" :
-                    "border-gray-300"
-                  )}
-                >
-                  {(allSelected || someSelected) && <Check className="h-3 w-3 text-white" />}
-                </button>
                 <span className="text-xs text-[var(--teuco-text-muted)] shrink-0">
                   {group.products.length}
                 </span>
@@ -394,33 +270,13 @@ export default function ProductsPage() {
 
               {/* Products in this category */}
               {!isCollapsed && group.products.map((product: any) => {
-                const isSelected = selectedIds.has(product.id)
-
                 return (
                   <Link 
                     key={product.id} 
                     href={`/products/${product.id}/edit`}
-                    className={cn(
-                      "block bg-white rounded-lg shadow-sm p-3 border-l-4 cursor-pointer",
-                      isSelected ? "border-[var(--teuco-green)]" : "border-transparent",
-                      "hover:shadow-md transition-shadow"
-                    )}
+                    className="block bg-white rounded-lg shadow-sm p-3 border-l-4 border-transparent cursor-pointer hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-center gap-3">
-                      {/* Checkbox - prevent click from triggering link */}
-                      <div 
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          toggleSelect(product.id)
-                        }}
-                        className={cn(
-                          "w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
-                          isSelected ? "bg-[var(--teuco-green)] border-[var(--teuco-green)]" : "border-gray-300"
-                        )}
-                      >
-                        {isSelected && <Check className="h-3 w-3 text-white" />}
-                      </div>
                       
                       {/* Big Code Display - instead of icon */}
                       {product.alphaCode && (
@@ -478,33 +334,12 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Floating delete button */}
-      {selectedIds.size > 0 && (
-        <div className="fixed bottom-20 left-4 right-4 lg:left-72 lg:right-4 z-30">
-          <div className="bg-red-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-between">
-            <span className="text-sm font-bold">
-              {selectedIds.size} produto(s) selecionado(s)
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="bg-white text-red-500 hover:bg-red-50 h-8"
-              onClick={handleDeleteMultiple}
-              disabled={deletingMultiple}
-            >
-              <Trash2 className="h-4 w-4 mr-1" />
-              {deletingMultiple ? 'Excluindo...' : 'Excluir'}
-            </Button>
-          </div>
-        </div>
-      )}
-
       <ProgressModal
         open={updatingSite}
         steps={updateSteps}
         currentStep={updateCurrentStep}
-        progress={updateProgress}
         error={updateError}
+        onComplete={handleUpdateSiteComplete}
       />
     </div>
   )
