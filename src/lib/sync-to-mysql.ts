@@ -214,6 +214,7 @@ export async function syncPendingProducts(): Promise<{ success: number; failed: 
         productOrigin: 'NACIONAL',
         ncm: 5100010,
         unit: 18008022,
+        favorite: 1,
       }
       
       const result = await fetchAPI('/products', {

@@ -94,23 +94,36 @@ export async function POST(request: NextRequest) {
       productBody.description = productBody.name
     }
     
-    // Build only the fields SmartPOS API needs
+    // Build the exact payload that SmartPOS API expects
     const smartposPayload = {
       alphaCode: productBody.alphaCode,
       description: productBody.description || productBody.name,
       sellValue: Number(productBody.sellValue) || 0,
       costValue: Number(productBody.costValue) || 0,
+      eanCode: productBody.eanCode || undefined,
+      netWeight: productBody.netWeight ? Number(productBody.netWeight) : undefined,
+      grossWeight: productBody.grossWeight ? Number(productBody.grossWeight) : undefined,
       minimumStock: Number(productBody.minimumStock) || 0,
-      category: Number(productBody.category),
       observation: productBody.observation || undefined,
-      detail: productBody.detail || undefined,
+      exTipi: productBody.exTipi || undefined,
+      cest: productBody.cest || undefined,
       isFractional: false,
       noStock: false,
       isOpenValue: false,
       showCatalog: true,
-      productOrigin: 'NACIONAL',
-      ncm: 5100010,
+      promotionalValue: productBody.promotionalValue ? Number(productBody.promotionalValue) : undefined,
+      promotionalExpirationDate: productBody.promotionalExpirationDate || undefined,
+      promotionalDisplayTimer: productBody.promotionalDisplayTimer || false,
+      category: Number(productBody.category),
       unit: 18008022,
+      ncm: 5100010,
+      productOrigin: 'NACIONAL',
+      favorite: 1,
+      detail: productBody.detail ? {
+        text: productBody.detail.text || '',
+        viewMode: 'TEXT',
+        color: productBody.detail.color || '#ffff6010',
+      } : undefined,
     }
     
     console.log('[API] Sending to SmartPOS:', JSON.stringify(smartposPayload))
