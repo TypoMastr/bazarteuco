@@ -502,12 +502,15 @@ function generateWhatsAppMessage(
           lines.push('━━━━━━━━━━━━━━━━━━')
         })
       } else {
-        lines.push('')
-        lines.push(`*Mais vendidos:*`)
         const products = report.products || report.topProducts || []
-        const top = [...products].sort((a, b) => b.quantity - a.quantity).slice(0, 10)
-        top.forEach(p => {
-          lines.push(`- ${p.name}: ${p.quantity} uni - ${formatCurrency(p.total)}`)
+        const sorted = [...products].sort((a, b) => b.quantity - a.quantity)
+        const totalQty = sorted.reduce((sum, p) => sum + p.quantity, 0)
+
+        lines.push('')
+        lines.push(`📦 *Todos os Produtos Vendidos* (${sorted.length} itens | ${totalQty} unidades)`)
+        lines.push('')
+        sorted.forEach(p => {
+          lines.push(`• ${p.name} (${p.quantity}x) - ${formatCurrency(p.total)}`)
         })
       }
       break
