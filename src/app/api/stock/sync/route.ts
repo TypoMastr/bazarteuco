@@ -5,10 +5,17 @@ import { executeQuery, executeUpdate, getPool } from '@/lib/mysql-client'
 const API_BASE = 'https://api.smartpos.app/v1'
 
 function getHeaders() {
+  const apiKeyId = process.env.SMARTPOS_API_KEY_ID
+  const apiKeySecret = process.env.SMARTPOS_API_KEY_SECRET
+  
+  if (!apiKeyId || !apiKeySecret) {
+    throw new Error('Credenciais SmartPOS não configuradas')
+  }
+  
   return {
     'Content-Type': 'application/json',
-    'X-Api-Key-Id': process.env.SMARTPOS_API_KEY_ID!,
-    'X-Api-Key-Secret': process.env.SMARTPOS_API_KEY_SECRET!,
+    'X-Api-Key-Id': apiKeyId,
+    'X-Api-Key-Secret': apiKeySecret,
   }
 }
 
