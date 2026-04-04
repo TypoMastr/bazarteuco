@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { generateSiteHtml } from '@/lib/site-generator'
 import * as ftp from 'basic-ftp'
+import { Readable } from 'stream'
 
 export async function POST() {
   try {
@@ -29,7 +30,7 @@ export async function POST() {
       })
 
       await client.uploadFrom(
-        html,
+        Readable.from([html]),
         ftpPath
       )
 
