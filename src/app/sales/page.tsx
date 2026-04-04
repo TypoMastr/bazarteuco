@@ -96,7 +96,7 @@ export default function SalesPage() {
     })
   }, [])
 
-  const { status: streamStatus, isCatchingUp, catchUpProgress: streamProgress, catchUpMessage: streamMessage, isSyncing } = useSalesStream({
+  const { status: streamStatus, isCatchingUp, catchUpProgress: streamProgress, catchUpMessage: streamMessage, isInitialSync } = useSalesStream({
     enabled: !!latestDate,
     onNewSale: handleNewSale,
   })
@@ -242,7 +242,7 @@ export default function SalesPage() {
     })
   }
 
-  if (loading || isSyncing) {
+  if (loading || isInitialSync) {
     return (
       <div className="p-4 space-y-4 animate-pulse max-w-5xl mx-auto">
         <div className="h-12 bg-black/5 rounded-lg" />

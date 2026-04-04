@@ -13,7 +13,7 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
   const [status, setStatus] = useState<'connected' | 'reconnecting' | 'offline'>('reconnecting')
   const [lastSyncDate, setLastSyncDate] = useState<string | null>(null)
   const [isCatchingUp, setIsCatchingUp] = useState(false)
-  const [isSyncing, setIsSyncing] = useState(false)
+  const [isInitialSync, setIsInitialSync] = useState(false)
   const [catchUpProgress, setCatchUpProgress] = useState(0)
   const [catchUpMessage, setCatchUpMessage] = useState('')
   const [hasSalesToday, setHasSalesToday] = useState(false)
@@ -53,18 +53,18 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
     } catch {}
   }, [])
 
-  const syncSales = useCallback(async (isCatchUp = false) => {
+  const syncSales = useCallback(async (isCatchUp: boolean) => {
     if (isSyncingRef.current) return
     isSyncingRef.current = true
-    setIsSyncing(true)
+
+    if (isCatchUp) {
+      setIsInitialSync(true)
+      setIsCatchingUp(true)
+      setCatchUpProgress(10)
+      setCatchUpMessage('Buscando vendas do sistema...')
+    }
 
     try {
-      if (isCatchUp) {
-        setIsCatchingUp(true)
-        setCatchUpProgress(10)
-        setCatchUpMessage('Buscando vendas do sistema...')
-      }
-
       const body: any = {}
       if (lastSyncDate) body.since = lastSyncDate
 
@@ -105,8 +105,8 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
       }
     } finally {
       isSyncingRef.current = false
-      setIsSyncing(false)
       if (isCatchUp) {
+        setIsInitialSync(false)
         setIsCatchingUp(false)
       }
     }
@@ -152,7 +152,7 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
 
   // Polling after initial sync
   useEffect(() => {
-    if (!enabled || isSyncing || !hasSalesToday) return
+    if (!enabled || isInitialSync || !hasSalesToday) return
 
     const runCycle = () => {
       syncSales(false).then(() => {
@@ -165,12 +165,12 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [enabled, isSyncing, hasSalesToday, syncSales, checkNewSales])
+  }, [enabled, isInitialSync, hasSalesToday, syncSales, checkNewSales])
 
   return {
     status,
     isCatchingUp,
-    isSyncing,
+    isInitialSync,
     catchUpProgress,
     catchUpMessage,
     lastSyncDate,

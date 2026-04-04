@@ -144,7 +144,7 @@ export default function DailyReportPage() {
     if (selectedDate) fetchReport(selectedDate, true)
   }, [selectedDate, fetchReport])
 
-  const { status: streamStatus, isCatchingUp, catchUpProgress: streamProgress, catchUpMessage: streamMessage, isSyncing } = useSalesStream({
+  const { status: streamStatus, isCatchingUp, catchUpProgress: streamProgress, catchUpMessage: streamMessage, isInitialSync } = useSalesStream({
     enabled: !!report,
     onNewSale: handleNewSale,
   })
@@ -156,7 +156,7 @@ export default function DailyReportPage() {
       : <ArrowUp className="h-3 w-3 inline ml-1 text-[var(--teuco-green)]" />
   }
 
-  if ((loadingReport && !report) || (isSyncing && !report)) {
+  if ((loadingReport && !report) || (isInitialSync && !report)) {
     return (
       <div className="p-4 space-y-4 animate-pulse max-w-5xl mx-auto">
         <div className="h-10 bg-black/5 rounded-lg" />
