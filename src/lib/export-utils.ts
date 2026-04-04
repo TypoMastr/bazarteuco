@@ -248,7 +248,15 @@ function exportSalesPDF(doc: jsPDF, data: any): void {
     const { date: saleDate, time: saleTime } = formatDateTimeBR(sale.creationDate)
     const items = saleItemsMap[uid] || sale.items || []
 
-    if (startY > 255) {
+    // Calculate total height needed for this sale
+    const headerH = 10
+    const itemsH = items.length * 7
+    const totalH = 10
+    const spacerH = saleIdx < sales.length - 1 ? 4 : 0
+    const saleTotalH = headerH + itemsH + totalH + spacerH
+
+    // If sale won't fit, start new page
+    if (startY + saleTotalH > 270) {
       doc.addPage()
       startY = 12
     }
@@ -268,10 +276,6 @@ function exportSalesPDF(doc: jsPDF, data: any): void {
 
     if (items.length > 0) {
       items.forEach((item: any, idx: number) => {
-        if (startY > 270) {
-          doc.addPage()
-          startY = 12
-        }
 
         const itemName = item.product?.name || item.productName || 'Valor Avulso'
         const qty = item.quantity || 1
@@ -302,10 +306,6 @@ function exportSalesPDF(doc: jsPDF, data: any): void {
       })
 
       // Total row
-      if (startY > 265) {
-        doc.addPage()
-        startY = 12
-      }
       doc.setFillColor(230, 250, 235)
       doc.rect(10, startY, 190, 7, 'F')
       doc.setFontSize(8)
