@@ -20,10 +20,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white/95 backdrop-blur-md border-t border-black/[0.05] shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
-        <div
-          className="flex items-end justify-around h-16 px-1"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-        >
+        <div className="flex items-center justify-around h-16 px-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href
             return (
@@ -31,11 +28,12 @@ export function BottomNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'relative flex flex-col items-center justify-center min-w-[56px] flex-1 pb-1 transition-all duration-200',
+                  'relative flex flex-col items-center justify-center min-w-[56px] flex-1 transition-all duration-200',
                   isActive
                     ? 'text-[var(--teuco-green)]'
                     : 'text-[var(--teuco-text)]'
                 )}
+                style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
               >
                 <div className={cn(
                   'flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200',
