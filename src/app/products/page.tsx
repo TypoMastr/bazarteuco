@@ -67,9 +67,11 @@ export default function ProductsPage() {
     try {
       setStep('syncCategories', 'loading')
       await new Promise(r => setTimeout(r, 800))
+      setStep('syncCategories', 'done')
 
       setStep('syncProducts', 'loading')
       await new Promise(r => setTimeout(r, 1500))
+      setStep('syncProducts', 'done')
 
       setStep('generateHTML', 'loading')
       await new Promise(r => setTimeout(r, 500))
@@ -81,8 +83,8 @@ export default function ProductsPage() {
       setStep('generateHTML', 'done')
       setStep('uploadFTP', 'loading')
       await new Promise(r => setTimeout(r, 800))
-
       setStep('uploadFTP', 'done')
+
       await refetch()
       toast.success('Site atualizado com sucesso!')
     } catch (err: any) {
