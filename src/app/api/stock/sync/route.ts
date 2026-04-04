@@ -39,7 +39,6 @@ export async function POST() {
   try {
     await initDatabase()
     
-    // Fast sync: fetch all products in one go with larger page size
     const pool = getPool()
     const conn = await pool.getConnection()
     
@@ -51,9 +50,11 @@ export async function POST() {
       await conn.beginTransaction()
       
       while (true) {
+        console.log(`[Sync] Fetching page ${page}...`)
         const data = await fetchAPI(`/products?page=${page}&size=${pageSize}`)
         const products = Array.isArray(data?.items) ? data.items : []
         
+        console.log(`[Sync] Got ${products.length} products on page ${page}`)
         if (products.length === 0) break
         
         for (const product of products) {
@@ -120,18 +121,20 @@ export async function POST() {
       await conn.commit()
     } catch (err) {
       await conn.rollback()
+      console.error('[Sync] Transaction error:', err)
       throw err
     } finally {
       conn.release()
     }
     
+    console.log(`[Sync] Complete. Total synced: ${totalSynced}`)
     return NextResponse.json({
       success: true,
       synced: totalSynced,
       failed: 0,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('[API] Stock sync POST error:', error)
-    return NextResponse.json({ error: 'Erro ao sincronizar com API' }, { status: 500 })
+    return NextResponse.json({ error: 'Erro ao sincronizar: ' + (error?.message || 'Erro desconhecido') }, { status: 500 })
   }
 }
