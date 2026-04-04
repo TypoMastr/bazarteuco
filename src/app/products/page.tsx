@@ -12,6 +12,7 @@ import { useState, useMemo } from 'react'
 import { useToast } from '@/components/ui/toast'
 import { ExportMenu } from '@/components/export-menu'
 import { PageHeader } from '@/components/page-header'
+import { ProgressModal } from '@/components/progress-modal'
 
 type SortOption = 'name' | 'code'
 
@@ -30,6 +31,10 @@ export default function ProductsPage() {
   const [deletingMultiple, setDeletingMultiple] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [updatingSite, setUpdatingSite] = useState(false)
+  const [updateProgress, setUpdateProgress] = useState(0)
+  const [updateSteps, setUpdateSteps] = useState<Array<{ id: string; label: string; icon: any; status: 'pending' | 'loading' | 'done' | 'error' }>>([])
+  const [updateCurrentStep, setUpdateCurrentStep] = useState('')
+  const [updateError, setUpdateError] = useState<string | null>(null)
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
   const toast = useToast()
 
@@ -46,17 +51,61 @@ export default function ProductsPage() {
   }
 
   async function handleUpdateSite() {
+    const steps = [
+      { id: 'syncCategories', label: 'Buscando categorias do sistema', icon: CloudUpload, status: 'pending' as const },
+      { id: 'syncProducts', label: 'Buscando lista de produtos', icon: CloudUpload, status: 'pending' as const },
+      { id: 'generateHTML', label: 'Montando página do site', icon: CloudUpload, status: 'pending' as const },
+      { id: 'uploadFTP', label: 'Enviando para o servidor', icon: CloudUpload, status: 'pending' as const },
+    ]
+
+    setUpdateSteps(steps)
+    setUpdateCurrentStep('syncCategories')
+    setUpdateProgress(0)
+    setUpdateError(null)
     setUpdatingSite(true)
+
+    async function setStep(id: string, status: 'loading' | 'done' | 'error') {
+      setUpdateSteps(prev => prev.map(s => s.id === id ? { ...s, status } : s))
+      if (status === 'loading') setUpdateCurrentStep(id)
+      const idx = steps.findIndex(s => s.id === id)
+      if (status === 'done') setUpdateProgress(Math.round(((idx + 1) / steps.length) * 100))
+    }
+
     try {
+      setStep('syncCategories', 'loading')
+      await new Promise(r => setTimeout(r, 800))
+
+      setStep('syncProducts', 'loading')
+      await new Promise(r => setTimeout(r, 1500))
+
+      setStep('generateHTML', 'loading')
+      await new Promise(r => setTimeout(r, 500))
+
       const res = await fetch('/api/site/generate', { method: 'POST' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Erro')
+
+      setStep('generateHTML', 'done')
+      setStep('uploadFTP', 'loading')
+      await new Promise(r => setTimeout(r, 800))
+
+      setStep('uploadFTP', 'done')
+      setUpdateProgress(100)
       await refetch()
       toast.success('Site atualizado com sucesso!')
+
+      setTimeout(() => {
+        setUpdatingSite(false)
+      }, 1500)
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao atualizar site')
-    } finally {
-      setUpdatingSite(false)
+      const currentIdx = steps.findIndex(s => s.id === updateCurrentStep)
+      if (currentIdx >= 0) {
+        setStep(updateCurrentStep, 'error')
+      }
+      setUpdateError(err.message || 'Erro ao atualizar site')
+      setTimeout(() => {
+        setUpdatingSite(false)
+      }, 3000)
     }
   }
 
@@ -449,6 +498,14 @@ export default function ProductsPage() {
           </div>
         </div>
       )}
+
+      <ProgressModal
+        open={updatingSite}
+        steps={updateSteps}
+        currentStep={updateCurrentStep}
+        progress={updateProgress}
+        error={updateError}
+      />
     </div>
   )
 }
