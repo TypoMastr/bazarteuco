@@ -1,5 +1,6 @@
 import { getProduct, updateProduct, deleteProduct } from '@/lib/smartpos-api'
 import { syncProductsToMySQL } from '@/lib/sync-to-mysql'
+import { executeUpdate } from '@/lib/mysql-client'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -36,12 +37,28 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const result = await deleteProduct(id)
+    const numericId = parseInt(id)
     
-    // Sync para MySQL em background (não bloqueia a resposta)
-    syncProductsToMySQL().catch(err => console.error('[Sync] Products sync error:', err))
+    // Check if it's a local product (negative ID)
+    if (numericId < 0) {
+      try {
+        await executeUpdate('DELETE FROM products WHERE id = ?', [numericId])
+        await executeUpdate('DELETE FROM stock WHERE product_id = ?', [numericId])
+        return NextResponse.json({ success: true, deleted: true, local: true })
+      } catch (err) {
+        console.error('[API] Error deleting local product:', err)
+        return NextResponse.json({ error: 'Erro ao excluir produto local' }, { status: 500 })
+      }
+    }
     
-    return NextResponse.json({ success: true, deleted: result !== null })
+    // Try to delete from SmartPOS
+    try {
+      const result = await deleteProduct(id)
+      return NextResponse.json({ success: true, deleted: result !== null })
+    } catch (err) {
+      // If SmartPOS fails, still delete locally if it was synced before
+      return NextResponse.json({ error: 'Erro ao excluir produto da SmartPOS' }, { status: 500 })
+    }
   } catch (error) {
     console.error('[API] Delete product error:', error)
     return NextResponse.json({ error: 'Erro ao excluir produto' }, { status: 500 })
