@@ -176,20 +176,22 @@ export async function getDailyReport(date: string) {
   const endISO = `${date}T23:59:59Z`
 
   const sales = await executeQuery<any>(`
-    SELECT sale_id, total_amount, discount_amount
+    SELECT sale_id, unique_identifier, creation_date, total_amount, discount_amount
     FROM sales_cache
     WHERE creation_date >= ? AND creation_date <= ?
     AND is_canceled = FALSE
+    ORDER BY creation_date ASC
   `, [startISO, endISO])
 
   const items = await executeQuery<any>(`
-    SELECT product_name, quantity, unit_price, net_item, is_rifa, is_avulso, is_doacao
-    FROM sale_items_cache
-    WHERE sale_id IN (
+    SELECT si.sale_id, si.product_name, si.quantity, si.unit_price, si.net_item, si.is_rifa, si.is_avulso, si.is_doacao
+    FROM sale_items_cache si
+    WHERE si.sale_id IN (
       SELECT sale_id FROM sales_cache
       WHERE creation_date >= ? AND creation_date <= ?
       AND is_canceled = FALSE
     )
+    ORDER BY si.sale_id
   `, [startISO, endISO])
 
   const productMap = new Map<string, { name: string; quantity: number; unitPrice: number; total: number; isRifa: boolean; isAvulso: boolean; isDoacao: boolean }>()
@@ -219,9 +221,30 @@ export async function getDailyReport(date: string) {
   const doacaoRevenue = products.filter(p => p.isDoacao).reduce((sum, p) => sum + p.total, 0)
   const bazarRevenue = products.filter(p => !p.isRifa && !p.isAvulso && !p.isDoacao).reduce((sum, p) => sum + p.total, 0)
 
+  const salesWithItems = sales.map((sale: any, index: number) => {
+    const saleItems = items
+      .filter((item: any) => item.sale_id === sale.sale_id)
+      .map((item: any) => ({
+        productName: item.product_name,
+        quantity: Number(item.quantity),
+        unitPrice: Number(item.unit_price),
+        total: Number(item.net_item),
+      }))
+
+    return {
+      saleNumber: index + 1,
+      saleId: sale.sale_id,
+      uniqueIdentifier: sale.unique_identifier,
+      creationDate: sale.creation_date ? sale.creation_date.toISOString() : '',
+      totalAmount: Number(sale.total_amount),
+      items: saleItems,
+    }
+  })
+
   return {
     date,
     products,
+    sales: salesWithItems,
     summary: {
       totalSales: sales.length,
       totalRevenue,

@@ -36,6 +36,14 @@ export interface SaleData {
 export interface ReportData {
   date?: string
   products?: { name: string; quantity: number; unitPrice: number; total: number }[]
+  sales?: {
+    saleNumber: number
+    saleId: string
+    uniqueIdentifier: string
+    creationDate: string
+    totalAmount: number
+    items: { productName: string; quantity: number; unitPrice: number; total: number }[]
+  }[]
   summary: { 
     totalSales: number; 
     totalRevenue: number;
@@ -230,63 +238,132 @@ function exportSalesPDF(doc: jsPDF, sales: SaleData[]): void {
   })
 }
 
+function formatDateTimeBR(dateISO: string): { date: string; time: string } {
+  if (!dateISO) return { date: '-', time: '-' }
+  const d = new Date(dateISO)
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const yyyy = d.getFullYear()
+  const hh = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return { date: `${dd}/${mm}/${yyyy}`, time: `${hh}:${min}` }
+}
+
 function exportReportPDF(doc: jsPDF, report: ReportData): void {
-  const products = report.products || report.topProducts || []
-  const dateLabel = report.date 
-    ? formatDateBR(report.date)
-    : (report.year ? `${report.month ? `${report.month}/` : ''}${report.year}` : 'Relatório')
-  
-  doc.setFontSize(16)
+  const dateLabel = report.date ? formatDateBR(report.date) : 'Relatório'
+  const summary = report.summary
+
+  // Header
+  doc.setFontSize(18)
   doc.setFont('helvetica', 'bold')
-  doc.text('Relatorio de Vendas', 14, 14)
-  doc.setFontSize(10)
+  doc.setTextColor(34, 139, 34)
+  doc.text('Relatorio de Vendas', 14, 16)
+  doc.setFontSize(11)
   doc.setFont('helvetica', 'normal')
-  doc.text(dateLabel, 14, 22)
-  doc.text(`Vendas: ${report.summary.totalSales} | Receita: ${formatCurrency(report.summary.totalRevenue)}`, 14, 30)
+  doc.setTextColor(100, 100, 100)
+  doc.text(dateLabel, 14, 24)
 
-  const categories: { name: string; matcher: (p: any) => boolean; color: [number, number, number] }[] = [
-    { name: 'Bazar', matcher: (p: any) => !p.isRifa && !p.isAvulso && !p.isDoacao && !matchesGiraDaMata(p.name) && !matchesEventos(p.name), color: [59, 130, 246] },
-    { name: 'Rifa', matcher: (p: any) => p.isRifa, color: [249, 115, 22] },
-    { name: 'Avulsos', matcher: (p: any) => p.isAvulso, color: [168, 85, 247] },
-    { name: 'Doacoes', matcher: (p: any) => p.isDoacao, color: [236, 72, 153] },
-    { name: 'Gira da Mata', matcher: (p: any) => matchesGiraDaMata(p.name), color: [245, 158, 11] },
-    { name: 'Eventos/Cantina', matcher: (p: any) => matchesEventos(p.name), color: [20, 184, 166] },
-  ]
+  // Summary bar
+  doc.setFontSize(9)
+  doc.setTextColor(60, 60, 60)
+  doc.text(`Vendas: ${summary.totalSales}  |  Receita: ${formatCurrency(summary.totalRevenue)}`, 14, 32)
 
+  // Category breakdown
   let startY = 38
-  categories.forEach(cat => {
-    const catProducts = products.filter(p => cat.matcher(p))
-    if (catProducts.length === 0) return
+  const categories = [
+    { label: 'Bazar', value: summary.bazarRevenue || 0, color: [37, 99, 235] as [number, number, number] },
+    { label: 'Rifa', value: summary.rifaRevenue || 0, color: [234, 88, 12] as [number, number, number] },
+    { label: 'Avulsos', value: summary.avulsoRevenue || 0, color: [147, 51, 234] as [number, number, number] },
+    { label: 'Doacoes', value: summary.doacaoRevenue || 0, color: [219, 39, 119] as [number, number, number] },
+  ].filter(c => c.value > 0)
 
-    const catTotal = catProducts.reduce((sum, p) => sum + p.total, 0)
+  if (categories.length > 0) {
+    const catText = categories.map(c => `${c.label}: ${formatCurrency(c.value)}`).join('  |  ')
+    doc.setFontSize(8)
+    doc.setTextColor(100, 100, 100)
+    doc.text(catText, 14, startY)
+    startY += 8
+  }
+
+  // Separator line
+  doc.setDrawColor(200, 200, 200)
+  doc.setLineWidth(0.3)
+  doc.line(14, startY, 196, startY)
+  startY += 4
+
+  // Individual sales
+  const sales = report.sales || []
+  sales.forEach((sale, idx) => {
+    const { date: saleDate, time: saleTime } = formatDateTimeBR(sale.creationDate)
+    const saleLabel = sale.uniqueIdentifier ? `#${sale.uniqueIdentifier}` : `#${sale.saleNumber}`
+
+    // Check if we need a new page
+    if (startY > 250) {
+      doc.addPage()
+      startY = 15
+    }
+
+    // Sale header
     doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(...cat.color)
-    doc.text(`${cat.name} (${catProducts.length} itens) - ${formatCurrency(catTotal)}`, 14, startY)
-    startY += 1
+    doc.setTextColor(34, 139, 34)
+    doc.text(`Venda ${saleLabel}`, 14, startY)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(120, 120, 120)
+    doc.text(`${saleDate}  •  ${saleTime}`, 60, startY)
+    startY += 2
 
-    const tableData = catProducts.map(p => [
-      p.name,
-      p.quantity,
-      formatCurrency(p.total / p.quantity || (p as any).unitPrice || 0),
-      formatCurrency(p.total)
+    // Items table
+    const tableData = sale.items.map(item => [
+      item.productName,
+      item.quantity.toString(),
+      formatCurrency(item.unitPrice),
+      formatCurrency(item.total),
     ])
 
     autoTable(doc, {
       head: [['Produto', 'Qtd', 'Unitario', 'Total']],
       body: tableData,
       startY,
-      styles: { fontSize: 7 },
-      headStyles: { fillColor: cat.color },
-      margin: { left: 14, right: 14 }
+      styles: { fontSize: 7, cellPadding: 1.5 },
+      headStyles: {
+        fillColor: [34, 139, 34],
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 7,
+      },
+      columnStyles: {
+        0: { cellWidth: 80 },
+        1: { cellWidth: 15, halign: 'center' },
+        2: { cellWidth: 30, halign: 'right' },
+        3: { cellWidth: 30, halign: 'right' },
+      },
+      margin: { left: 14, right: 14 },
+      theme: 'grid',
     })
 
-    startY = (doc as any).lastAutoTable.finalY + 6
-    if (startY > 250) {
-      doc.addPage()
-      startY = 15
-    }
+    startY = (doc as any).lastAutoTable.finalY + 2
+
+    // Sale total
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(34, 139, 34)
+    doc.text(`Total: ${formatCurrency(sale.totalAmount)}`, 14, startY)
+    startY += 4
+
+    // Separator
+    doc.setDrawColor(220, 220, 220)
+    doc.setLineWidth(0.2)
+    doc.line(14, startY, 196, startY)
+    startY += 4
   })
+
+  if (sales.length === 0) {
+    doc.setFontSize(10)
+    doc.setTextColor(150, 150, 150)
+    doc.text('Nenhuma venda registrada neste dia.', 14, startY)
+  }
 }
 
 export function exportToWhatsApp(
@@ -390,23 +467,49 @@ function generateWhatsAppMessage(
     }
     case 'report': {
       const report = data as ReportData
-      const dateLabel = report.date 
-        ? formatDateBR(report.date)
-        : (report.year ? `${report.month ? `${report.month}/` : ''}${report.year}` : 'Relatório')
+      const dateLabel = report.date ? formatDateBR(report.date) : 'Relatório'
+      const summary = report.summary
+
+      lines.push(`*Relatório de Vendas*`)
       lines.push(`*${dateLabel}*`)
-      lines.push(`Receita: ${formatCurrency(report.summary.totalRevenue)}`)
-      if (report.summary.bazarRevenue) lines.push(`Bazar: ${formatCurrency(report.summary.bazarRevenue)}`)
-      if (report.summary.rifaRevenue) lines.push(`Rifa: ${formatCurrency(report.summary.rifaRevenue)}`)
-      if (report.summary.avulsoRevenue) lines.push(`Avulsos: ${formatCurrency(report.summary.avulsoRevenue)}`)
-      if (report.summary.doacaoRevenue) lines.push(`Doações: ${formatCurrency(report.summary.doacaoRevenue)}`)
-      lines.push(`Vendas: ${report.summary.totalSales}`)
       lines.push('')
-      lines.push(`*Mais vendidos:*`)
-      const products = report.products || report.topProducts || []
-      const top = [...products].sort((a, b) => b.quantity - a.quantity).slice(0, 5)
-      top.forEach(p => {
-        lines.push(`- ${p.name}: ${p.quantity} uni`)
-      })
+      lines.push(`💰 *Resumo*`)
+      lines.push(`Total: ${summary.totalSales} vendas | ${formatCurrency(summary.totalRevenue)}`)
+      if (summary.bazarRevenue) lines.push(`🛒 Bazar: ${formatCurrency(summary.bazarRevenue)}`)
+      if (summary.rifaRevenue) lines.push(`🎫 Rifa: ${formatCurrency(summary.rifaRevenue)}`)
+      if (summary.avulsoRevenue) lines.push(`📦 Avulsos: ${formatCurrency(summary.avulsoRevenue)}`)
+      if (summary.doacaoRevenue) lines.push(`💝 Doações: ${formatCurrency(summary.doacaoRevenue)}`)
+      lines.push('')
+
+      const sales = report.sales || []
+      if (sales.length > 0) {
+        lines.push('━━━━━━━━━━━━━━━━━━')
+        sales.forEach((sale) => {
+          const { date: saleDate, time: saleTime } = formatDateTimeBR(sale.creationDate)
+          const saleLabel = sale.uniqueIdentifier ? `#${sale.uniqueIdentifier}` : `#${sale.saleNumber}`
+
+          lines.push('')
+          lines.push(`🧾 *Venda ${saleLabel}* • ${saleDate} • ${saleTime}`)
+          sale.items.forEach(item => {
+            const itemTotal = formatCurrency(item.total)
+            if (item.quantity > 1) {
+              lines.push(`• ${item.productName} (${item.quantity}x) - ${itemTotal}`)
+            } else {
+              lines.push(`• ${item.productName} - ${itemTotal}`)
+            }
+          })
+          lines.push(`*Total: ${formatCurrency(sale.totalAmount)}*`)
+          lines.push('━━━━━━━━━━━━━━━━━━')
+        })
+      } else {
+        lines.push('')
+        lines.push(`*Mais vendidos:*`)
+        const products = report.products || report.topProducts || []
+        const top = [...products].sort((a, b) => b.quantity - a.quantity).slice(0, 10)
+        top.forEach(p => {
+          lines.push(`- ${p.name}: ${p.quantity} uni - ${formatCurrency(p.total)}`)
+        })
+      }
       break
     }
   }
