@@ -86,7 +86,6 @@ export default function ProductsPage() {
       setStep('uploadFTP', 'done')
 
       await refetch()
-      toast.success('Site atualizado com sucesso!')
     } catch (err: any) {
       setStep(updateCurrentStep, 'error')
       setUpdateError(err.message || 'Erro ao atualizar site')
