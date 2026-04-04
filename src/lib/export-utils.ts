@@ -352,117 +352,168 @@ function formatDateTimeBR(dateISO: string): { date: string; time: string } {
 function exportReportPDF(doc: jsPDF, report: ReportData): void {
   const dateLabel = report.date ? formatDateBR(report.date) : 'Relatório'
   const summary = report.summary
+  const products = report.products || []
+  const extra = (report as any).extraData || {}
+  const bazarRevenue = extra.correctedBazarRevenue ?? summary.bazarRevenue ?? 0
+  const giraDaMataRevenue = extra.giraDaMataRevenue ?? 0
+  const eventosRevenue = extra.eventosRevenue ?? 0
+  const showGiraDaMata = extra.showGiraDaMata ?? giraDaMataRevenue > 0
+  const showEventos = extra.showEventos ?? eventosRevenue > 0
+
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const usableWidth = pageWidth - 28
 
   // Header
-  doc.setFontSize(18)
+  doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(34, 139, 34)
-  doc.text('Relatorio de Vendas', 14, 16)
+  const titleText = 'Relatorio Diario de Vendas'
+  const titleW = doc.getTextWidth(titleText)
+  doc.text(titleText, (pageWidth - titleW) / 2, 16)
+
   doc.setFontSize(11)
   doc.setFont('helvetica', 'normal')
-  doc.setTextColor(100, 100, 100)
-  doc.text(dateLabel, 14, 24)
+  doc.setTextColor(120, 120, 120)
+  const dateW = doc.getTextWidth(dateLabel)
+  doc.text(dateLabel, (pageWidth - dateW) / 2, 24)
 
-  // Summary bar
-  doc.setFontSize(9)
-  doc.setTextColor(60, 60, 60)
-  doc.text(`Vendas: ${summary.totalSales}  |  Receita: ${formatCurrency(summary.totalRevenue)}`, 14, 32)
+  // Green line
+  doc.setDrawColor(34, 139, 34)
+  doc.setLineWidth(1)
+  doc.line(14, 27, pageWidth - 14, 27)
 
-  // Category breakdown
-  let startY = 38
-  const categories = [
-    { label: 'Bazar', value: summary.bazarRevenue || 0, color: [37, 99, 235] as [number, number, number] },
+  // Total card
+  let startY = 34
+  doc.setFillColor(230, 250, 235)
+  doc.roundedRect(14, startY, usableWidth, 16, 2, 2, 'F')
+  doc.setDrawColor(34, 139, 34)
+  doc.setLineWidth(0.5)
+  doc.line(14, startY + 16, pageWidth - 14, startY + 16)
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(34, 139, 34)
+  doc.text('TOTAL', 20, startY + 7)
+  doc.setFontSize(14)
+  doc.text(formatCurrency(summary.totalRevenue), 20, startY + 14)
+
+  startY += 20
+
+  // Category cards - 3 per row
+  const cats = [
+    { label: 'Bazar', value: bazarRevenue, color: [37, 99, 235] as [number, number, number] },
     { label: 'Rifa', value: summary.rifaRevenue || 0, color: [234, 88, 12] as [number, number, number] },
     { label: 'Avulsos', value: summary.avulsoRevenue || 0, color: [147, 51, 234] as [number, number, number] },
     { label: 'Doacoes', value: summary.doacaoRevenue || 0, color: [219, 39, 119] as [number, number, number] },
-  ].filter(c => c.value > 0)
+  ]
+  if (showGiraDaMata) cats.push({ label: 'Gira da Mata', value: giraDaMataRevenue, color: [245, 158, 11] as [number, number, number] })
+  if (showEventos) cats.push({ label: 'Eventos/Cantina', value: eventosRevenue, color: [20, 184, 166] as [number, number, number] })
 
-  if (categories.length > 0) {
-    const catText = categories.map(c => `${c.label}: ${formatCurrency(c.value)}`).join('  |  ')
-    doc.setFontSize(8)
-    doc.setTextColor(100, 100, 100)
-    doc.text(catText, 14, startY)
-    startY += 8
-  }
+  const cardW = (usableWidth - 8) / 3
+  const cardH = 14
 
-  // Separator line
-  doc.setDrawColor(200, 200, 200)
-  doc.setLineWidth(0.3)
-  doc.line(14, startY, 196, startY)
-  startY += 4
+  cats.forEach((cat, i) => {
+    const col = i % 3
+    const row = Math.floor(i / 3)
+    const x = 14 + col * (cardW + 4)
+    const y = startY + row * (cardH + 4)
 
-  // Individual sales
-  const sales = report.sales || []
-  sales.forEach((sale, idx) => {
-    const { date: saleDate, time: saleTime } = formatDateTimeBR(sale.creationDate)
-    const saleLabel = sale.uniqueIdentifier ? `#${sale.uniqueIdentifier}` : `#${sale.saleNumber}`
+    doc.setFillColor(248, 248, 248)
+    doc.roundedRect(x, y, cardW, cardH, 1.5, 1.5, 'F')
+    doc.setDrawColor(...cat.color)
+    doc.setLineWidth(0.8)
+    doc.line(x, y + cardH, x + cardW, y + cardH)
 
-    // Check if we need a new page
-    if (startY > 250) {
-      doc.addPage()
-      startY = 15
-    }
-
-    // Sale header
-    doc.setFontSize(10)
+    doc.setFontSize(6)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(34, 139, 34)
-    doc.text(`Venda ${saleLabel}`, 14, startY)
-    doc.setFontSize(8)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(120, 120, 120)
-    doc.text(`${saleDate}  •  ${saleTime}`, 60, startY)
-    startY += 2
+    doc.setTextColor(...cat.color)
+    doc.text(cat.label.toUpperCase(), x + 3, y + 5.5)
 
-    // Items table
-    const tableData = sale.items.map(item => [
-      item.productName,
-      item.quantity.toString(),
-      formatCurrency(item.unitPrice),
-      formatCurrency(item.total),
-    ])
-
-    autoTable(doc, {
-      head: [['Produto', 'Qtd', 'Unitario', 'Total']],
-      body: tableData,
-      startY,
-      styles: { fontSize: 7, cellPadding: 1.5 },
-      headStyles: {
-        fillColor: [34, 139, 34],
-        textColor: 255,
-        fontStyle: 'bold',
-        fontSize: 7,
-      },
-      columnStyles: {
-        0: { cellWidth: 80 },
-        1: { cellWidth: 15, halign: 'center' },
-        2: { cellWidth: 30, halign: 'right' },
-        3: { cellWidth: 30, halign: 'right' },
-      },
-      margin: { left: 14, right: 14 },
-      theme: 'grid',
-    })
-
-    startY = (doc as any).lastAutoTable.finalY + 2
-
-    // Sale total
     doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(34, 139, 34)
-    doc.text(`Total: ${formatCurrency(sale.totalAmount)}`, 14, startY)
-    startY += 4
-
-    // Separator
-    doc.setDrawColor(220, 220, 220)
-    doc.setLineWidth(0.2)
-    doc.line(14, startY, 196, startY)
-    startY += 4
+    doc.setTextColor(30, 30, 30)
+    doc.text(formatCurrency(cat.value), x + 3, y + 11.5)
   })
 
-  if (sales.length === 0) {
+  const catsRows = Math.ceil(cats.length / 3)
+  startY += catsRows * (cardH + 4) + 6
+
+  // Separator
+  doc.setDrawColor(220, 220, 220)
+  doc.setLineWidth(0.3)
+  doc.line(14, startY, pageWidth - 14, startY)
+  startY += 6
+
+  // Products ranking header
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(34, 139, 34)
+  doc.text('Mais Vendidos', 14, startY)
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(140, 140, 140)
+  doc.text(`${products.length} produtos`, pageWidth - 14, startY, { align: 'right' })
+  startY += 5
+
+  // Products table
+  const productRows = products.map((p, i) => {
+    const rank = (i + 1).toString()
+    return [
+      rank,
+      p.name,
+      `${p.quantity}x`,
+      formatCurrency(p.unitPrice || (p.total / p.quantity || 0)),
+      formatCurrency(p.total),
+    ]
+  })
+
+  autoTable(doc, {
+    head: [['#', 'Produto', 'Qtd', 'Unitario', 'Total']],
+    body: productRows,
+    startY,
+    styles: { fontSize: 7, cellPadding: 2 },
+    headStyles: {
+      fillColor: [34, 139, 34],
+      textColor: 255,
+      fontStyle: 'bold',
+      fontSize: 7,
+    },
+    columnStyles: {
+      0: { cellWidth: 10, halign: 'center', fontStyle: 'bold' },
+      1: { cellWidth: 90 },
+      2: { cellWidth: 15, halign: 'center' },
+      3: { cellWidth: 30, halign: 'right' },
+      4: { cellWidth: 30, halign: 'right' },
+    },
+    margin: { left: 14, right: 14 },
+    theme: 'grid',
+    didParseCell: function(data) {
+      if (data.section === 'body' && data.column.index === 0) {
+        data.cell.styles.textColor = [34, 139, 34]
+        data.cell.styles.fontStyle = 'bold'
+      }
+    },
+    alternateRowStyles: {
+      fillColor: [250, 250, 250],
+    },
+  })
+
+  const finalY = (doc as any).lastAutoTable.finalY + 8
+
+  // Footer
+  if (finalY > 260) {
+    doc.addPage()
+    doc.setFillColor(34, 139, 34)
+    doc.rect(0, 10, pageWidth, 16, 'F')
     doc.setFontSize(10)
-    doc.setTextColor(150, 150, 150)
-    doc.text('Nenhuma venda registrada neste dia.', 14, startY)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(255, 255, 255)
+    doc.text(`${summary.totalSales} vendas  |  ${formatCurrency(summary.totalRevenue)}`, pageWidth / 2, 20, { align: 'center' })
+  } else {
+    doc.setFillColor(34, 139, 34)
+    doc.rect(0, finalY, pageWidth, 16, 'F')
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(255, 255, 255)
+    doc.text(`${summary.totalSales} vendas  |  ${formatCurrency(summary.totalRevenue)}`, pageWidth / 2, finalY + 10, { align: 'center' })
   }
 }
 

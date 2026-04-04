@@ -12,14 +12,15 @@ interface ExportModalProps {
   sortedProducts?: { name: string; quantity: number; unitPrice?: number; total: number }[]
   saleItems?: Record<string, any[]>
   dateRange?: { start: string; end: string }
+  extraData?: Record<string, any>
 }
 
-export function ExportModal({ type, data, sortedProducts, saleItems, dateRange }: ExportModalProps) {
+export function ExportModal({ type, data, sortedProducts, saleItems, dateRange, extraData }: ExportModalProps) {
   const [open, setOpen] = useState(false)
 
   const getExportData = (): ExportData => {
     if (type === 'report' && sortedProducts && typeof data === 'object' && 'summary' in data) {
-      return { ...data as ReportData, products: sortedProducts } as ExportData
+      return { ...data as ReportData, products: sortedProducts, extraData } as ExportData
     }
     if (type === 'sales' && saleItems) {
       return { sales: data as SaleData[], saleItems, dateRange } as unknown as ExportData
