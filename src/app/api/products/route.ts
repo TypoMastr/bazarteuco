@@ -66,8 +66,8 @@ export async function POST(request: NextRequest) {
     const { initialStock, ...productBody } = body
     const data = await createProduct(productBody)
     
-    // Sync imediato após criar
-    await syncProductsToMySQL()
+    // Sync para MySQL em background (não bloqueia a resposta)
+    syncProductsToMySQL().catch(err => console.error('[Sync] Products sync error:', err))
     
     // Definir estoque inicial no MySQL
     if (initialStock !== undefined && initialStock !== null) {
