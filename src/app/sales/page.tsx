@@ -8,11 +8,13 @@ import { formatCurrency, formatDate, cn, todayBR, formatDateBR } from '@/lib/uti
 import {
   Search, Loader2, Calendar, X,
   ShoppingCart, Package, RefreshCw,
-  Banknote, ShoppingBag
+  Banknote, ShoppingBag, Wifi, WifiOff, WifiLow
 } from 'lucide-react'
 import { salesCache } from '@/lib/sales-cache'
 import { ExportModal } from '@/components/export-modal'
 import { PageHeader } from '@/components/page-header'
+import { SyncCatchUpModal } from '@/components/sync-catchup-modal'
+import { useSalesStream } from '@/hooks/use-sales-stream'
 
 const ITEM_FETCH_CONCURRENCY = 4
 
@@ -72,8 +74,32 @@ export default function SalesPage() {
   const [latestDate, setLatestDate] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [newSalesCount, setNewSalesCount] = useState(0)
+  const [showCatchUp, setShowCatchUp] = useState(false)
+  const [catchUpProgress, setCatchUpProgress] = useState(0)
+  const [catchUpMessage, setCatchUpMessage] = useState('')
   const decrementedSalesRef = useRef<Set<string>>(new Set())
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const handleNewSale = useCallback((sale: any) => {
+    setSales((prev) => {
+      const exists = prev.some((s: any) => (s.uniqueIdentifier || s.id) === (sale.unique_identifier || sale.sale_id))
+      if (exists) return prev
+      const newSale = {
+        id: sale.sale_id,
+        uniqueIdentifier: sale.unique_identifier,
+        creationDate: sale.creation_date,
+        totalAmount: sale.total_amount,
+        isCanceled: sale.is_canceled,
+      }
+      setNewSalesCount((c) => c + 1)
+      return [newSale, ...prev]
+    })
+  }, [])
+
+  const { status: streamStatus, isCatchingUp, catchUpProgress: streamProgress, catchUpMessage: streamMessage } = useSalesStream({
+    enabled: !!latestDate,
+    onNewSale: handleNewSale,
+  })
 
   const salesRef = useRef(sales)
   const saleItemsRef = useRef(saleItems)
@@ -191,71 +217,6 @@ export default function SalesPage() {
     })
   }, [])
 
-  useEffect(() => {
-    if (typeof document !== 'undefined' && document.hidden) return
-    if (intervalRef.current) clearInterval(intervalRef.current)
-    
-    intervalRef.current = setInterval(() => {
-      const currentLatestDate = latestDate
-      if (!currentLatestDate) return
-      const now = new Date().toISOString()
-      const startISO = `${currentLatestDate}T00:00:00Z`
-      fetch(`/api/sales?start=${encodeURIComponent(startISO)}&end=${encodeURIComponent(now)}`)
-        .then((res: any) => res.ok ? res.json() : null)
-        .then((data: any) => {
-          if (!data) return
-          const salesList = Array.isArray(data) ? data : (data.items || data.data || [])
-          const existingIds = new Set(salesRef.current.map((s) => s.id))
-          const newSales = salesList.filter((s: any) => !existingIds.has(s.id))
-          const toDecrement = newSales.filter((s: any) => {
-            const uid = s.uniqueIdentifier || s.id
-            if (decrementedSalesRef.current.has(uid)) return false
-            decrementedSalesRef.current.add(uid)
-            return true
-          })
-          if (toDecrement.length > 0) {
-            setNewSalesCount(toDecrement.length)
-            setSales((prev) => salesCache.mergeSales(prev, toDecrement))
-            const uids = toDecrement.map((s: any) => s.uniqueIdentifier || s.id)
-            const existingItems = saleItemsRef.current
-            fetchSaleItemsBatch(uids).then((itemsMap) => {
-              setSaleItems({ ...existingItems, ...itemsMap })
-              
-              const stockUpdates: Record<number, number> = {}
-              for (const sale of toDecrement) {
-                const uid = sale.uniqueIdentifier || sale.id
-                const items = itemsMap[uid] || []
-                for (const item of items) {
-                  const pid = item.product?.id || item.productId
-                  if (pid) {
-                    stockUpdates[pid] = (stockUpdates[pid] || 0) + (item.quantity || 1)
-                  }
-                }
-              }
-              const stockItems = Object.entries(stockUpdates).map(([productId, quantity]) => ({
-                productId: parseInt(productId),
-                quantity
-              }))
-              if (stockItems.length > 0) {
-                decrementStock(stockItems)
-              }
-            })
-          }
-        })
-        .catch((error) => console.error('[Sales] Polling error:', error))
-    }, 60000)
-    
-    const handleVisibilityChange = () => {
-      if (document.hidden && intervalRef.current) clearInterval(intervalRef.current)
-    }
-    document?.addEventListener('visibilitychange', handleVisibilityChange)
-    
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-      document?.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [latestDate])
-
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
     if (!q) return sales
@@ -305,6 +266,18 @@ export default function SalesPage() {
         subtitle={latestDate ? formatDateBR(latestDate) : undefined}
         actions={
           <>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border text-xs font-bold uppercase">
+              {streamStatus === 'connected' ? (
+                <Wifi className="h-3.5 w-3.5 text-[var(--teuco-green)]" />
+              ) : streamStatus === 'reconnecting' ? (
+                <WifiLow className="h-3.5 w-3.5 text-amber-500" />
+              ) : (
+                <WifiOff className="h-3.5 w-3.5 text-red-500" />
+              )}
+              <span className={streamStatus === 'connected' ? 'text-[var(--teuco-green)]' : streamStatus === 'reconnecting' ? 'text-amber-500' : 'text-red-500'}>
+                {streamStatus === 'connected' ? 'Ao vivo' : streamStatus === 'reconnecting' ? 'Conectando...' : 'Offline'}
+              </span>
+            </div>
             <Button variant="tonal" onClick={handleSync} disabled={syncing} className="h-9 px-4">
               <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? 'Sync' : 'Atualizar'}
@@ -428,6 +401,13 @@ export default function SalesPage() {
           </div>
         )}
       </div>
+
+      <SyncCatchUpModal
+        open={isCatchingUp}
+        progress={streamProgress}
+        message={streamMessage}
+        onComplete={() => {}}
+      />
     </div>
   )
 }
