@@ -58,9 +58,9 @@ export function PageHeader({ title, subtitle, actions, backLink, className = '' 
         </div>
       </div>
 
-      {/* Actions row - wrap on mobile, right-aligned on desktop */}
+      {/* Actions row - centered on all screen sizes */}
       {actions && (
-        <div className="flex items-center justify-center md:justify-end gap-2 flex-wrap">
+        <div className="flex items-center justify-center gap-2 flex-wrap">
           {actions}
         </div>
       )}

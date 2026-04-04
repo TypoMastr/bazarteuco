@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { formatCurrency, cn } from '@/lib/utils'
-import { Search, Plus, AlertCircle, Package, Edit2, Archive, Trash2, X, Barcode, Check, FolderOpen, ArrowDownAZ, Hash, PackageCheck, RefreshCw, ChevronDown, ChevronRight, CloudUpload} from 'lucide-react'
+import { Search, Plus, AlertCircle, Package, Edit2, Trash2, X, Barcode, Check, FolderOpen, ArrowDownAZ, Hash, PackageCheck, RefreshCw, ChevronDown, ChevronRight, CloudUpload} from 'lucide-react'
 import Link from 'next/link'
 import { useState, useMemo } from 'react'
 import { useToast } from '@/components/ui/toast'
@@ -413,33 +413,6 @@ export default function ProductsPage() {
                           </p>
                         )}
                       </div>
-                    </div>
-
-                    {/* Desktop buttons - hidden on mobile */}
-                      <div className="hidden lg:flex items-center gap-1 shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          handleArchive(product.id, !product.archived)
-                        }}
-                        disabled={mutating === product.id}
-                      >
-                        <Archive className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-red-500 hover:bg-red-50"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          handleDelete(product.id)
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
                   </Link>
                 )

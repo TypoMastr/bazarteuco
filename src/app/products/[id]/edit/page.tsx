@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
-import { ArrowLeft, Edit3, Info, CheckCircle2, Loader2, AlertCircle, Sparkles, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Edit3, Info, CheckCircle2, Loader2, AlertCircle, Sparkles, RefreshCw, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
@@ -241,6 +241,24 @@ export default function EditProductPage() {
     }
   }
 
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleDelete() {
+    const confirmed = window.confirm('Tem certeza que deseja EXCLUIR este produto? Esta ação não pode ser desfeita.')
+    if (!confirmed) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/products/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Erro')
+      toast.success('Produto excluído')
+      router.push('/products')
+    } catch {
+      toast.error('Erro ao excluir produto')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   if (fetching) return (
     <div className="p-6 space-y-10 max-w-5xl mx-auto pb-32">
       <PageHeader
@@ -449,6 +467,15 @@ export default function EditProductPage() {
                     CANCELAR
                   </Button>
                 </Link>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="flex items-center justify-center gap-2 h-12 w-full rounded-lg border-2 border-red-200 bg-red-50 text-red-600 font-black text-xs uppercase tracking-wider hover:bg-red-100 transition-colors disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {deleting ? 'EXCLUINDO...' : 'EXCLUIR PRODUTO'}
+                </button>
               </div>
             </form>
           </Card>
