@@ -562,17 +562,25 @@ function generateWhatsAppMessage(
       const salesData = data as any
       const sales: SaleData[] = salesData.sales || data
       const saleItemsMap: Record<string, any[]> = salesData.saleItems || {}
+      const dateRange = salesData.dateRange || null
       const total = sales.reduce((sum, s) => sum + (s.totalAmount || 0), 0)
 
-      lines.push(`*Vendas do Dia*`)
-      lines.push('')
-      lines.push(`💰 *Resumo*`)
-      lines.push(`Total: ${sales.length} vendas | ${formatCurrency(total)}`)
+      let headerText = '*Bazar TEUCO*'
+      if (dateRange && dateRange.start && dateRange.end) {
+        if (dateRange.start === dateRange.end) {
+          headerText += ` - ${formatDateBR(dateRange.start)}`
+        } else {
+          headerText += ` - ${formatDateBR(dateRange.start)} ate ${formatDateBR(dateRange.end)}`
+        }
+      }
+      headerText += ` | Vendas: ${sales.length} | Receita: ${formatCurrency(total)}`
+
+      lines.push(headerText)
       lines.push('')
 
       sales.forEach((sale) => {
         const uid = sale.uniqueIdentifier || sale.id
-        const saleLabel = sale.orderName || (sale.uniqueIdentifier ? `#${sale.uniqueIdentifier}` : `#${uid.slice(-6)}`)
+        const saleLabel = sale.id && /^\d+$/.test(sale.id) ? `#${sale.id}` : (sale.orderName || `#${uid.slice(-6)}`)
         const { date: saleDate, time: saleTime } = formatDateTimeBR(sale.creationDate)
 
         lines.push('━━━━━━━━━━━━━━━━━━')
