@@ -136,7 +136,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     try {
       const result = await deleteProduct(id)
       
-      // Delete from local MySQL as well
+      // Delete from local MySQL as well (stock first, then products)
       try {
         await executeUpdate('DELETE FROM stock WHERE product_id = ?', [numericId])
         await executeUpdate('DELETE FROM products WHERE id = ?', [numericId])

@@ -120,6 +120,12 @@ async function syncAll() {
   const smartposIds = products.map(p => p.id)
   if (smartposIds.length > 0) {
     const placeholders = smartposIds.map(() => '?').join(',')
+    // Delete stock entries first (due to foreign key)
+    await executeUpdate(
+      `DELETE FROM stock WHERE product_id > 0 AND product_id NOT IN (${placeholders})`,
+      smartposIds
+    )
+    // Then delete products
     await executeUpdate(
       `DELETE FROM products WHERE id > 0 AND id NOT IN (${placeholders})`,
       smartposIds
