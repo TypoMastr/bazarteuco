@@ -117,8 +117,8 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     if (numericId < 0) {
       try {
         await ensureTablesExist()
-        await executeUpdate('DELETE FROM products WHERE id = ?', [numericId])
         await executeUpdate('DELETE FROM stock WHERE product_id = ?', [numericId])
+        await executeUpdate('DELETE FROM products WHERE id = ?', [numericId])
         return NextResponse.json({ success: true, deleted: true, local: true })
       } catch (err: any) {
         console.error('[API] Error deleting local product:', err)

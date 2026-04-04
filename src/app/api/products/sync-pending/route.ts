@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
     if (body.deleteId) {
       const numericId = parseInt(body.deleteId)
       if (numericId < 0) {
-        await executeUpdate('DELETE FROM products WHERE id = ?', [numericId])
         await executeUpdate('DELETE FROM stock WHERE product_id = ?', [numericId])
+        await executeUpdate('DELETE FROM products WHERE id = ?', [numericId])
         return NextResponse.json({ success: true, deleted: numericId })
       }
       return NextResponse.json({ error: 'ID deve ser negativo (produto local)' }, { status: 400 })
@@ -30,8 +30,8 @@ export async function POST(request: NextRequest) {
     
     // Delete all pending products
     if (body.deleteAll) {
-      await executeUpdate('DELETE FROM products WHERE id < 0')
       await executeUpdate('DELETE FROM stock WHERE product_id < 0')
+      await executeUpdate('DELETE FROM products WHERE id < 0')
       return NextResponse.json({ success: true, deletedAll: true })
     }
     
