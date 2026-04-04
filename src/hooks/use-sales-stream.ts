@@ -12,6 +12,7 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
   const [isCatchingUp, setIsCatchingUp] = useState(false)
   const [catchUpProgress, setCatchUpProgress] = useState(0)
   const [catchUpMessage, setCatchUpMessage] = useState('')
+  const [hasSalesToday, setHasSalesToday] = useState(false)
   const knownSaleIds = useRef<Set<string>>(new Set())
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const backoffRef = useRef(5000)
@@ -56,6 +57,12 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
       if (!res.ok) throw new Error('Sync failed')
 
       const data = await res.json()
+
+      // Only start polling if there are sales today
+      if (data.synced > 0 || data.lastSyncDate) {
+        setHasSalesToday(true)
+      }
+
       if (isCatchUp) {
         setCatchUpProgress(70)
         setCatchUpMessage(data.synced > 0 ? `Encontradas ${data.synced} venda(s) nova(s)...` : 'Nenhuma venda pendente.')
@@ -84,7 +91,7 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
   }, [lastSyncDate])
 
   const checkNewSales = useCallback(async () => {
-    if (!lastSyncDate || isSyncingRef.current) return
+    if (!lastSyncDate || isSyncingRef.current || !hasSalesToday) return
 
     try {
       const res = await fetch(`/api/check-new-sales?since=${encodeURIComponent(lastSyncDate)}`)
@@ -108,7 +115,7 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
       setStatus('reconnecting')
       backoffRef.current = Math.min(backoffRef.current * 2, 30000)
     }
-  }, [lastSyncDate, onNewSale, playNotificationSound])
+  }, [lastSyncDate, onNewSale, playNotificationSound, hasSalesToday])
 
   // Initial catch-up
   useEffect(() => {
@@ -116,9 +123,9 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
     syncSales(true)
   }, [enabled, syncSales])
 
-  // Polling after catch-up
+  // Polling after catch-up — ONLY if there are sales today
   useEffect(() => {
-    if (!enabled || isCatchingUp) return
+    if (!enabled || isCatchingUp || !hasSalesToday) return
 
     const runCycle = () => {
       syncSales(false).then(() => {
@@ -136,7 +143,7 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [enabled, isCatchingUp, syncSales, checkNewSales])
+  }, [enabled, isCatchingUp, hasSalesToday, syncSales, checkNewSales])
 
   return {
     status,
@@ -144,6 +151,7 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
     catchUpProgress,
     catchUpMessage,
     lastSyncDate,
+    hasSalesToday,
     triggerSync: () => syncSales(true),
   }
 }
