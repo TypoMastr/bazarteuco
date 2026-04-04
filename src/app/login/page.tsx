@@ -16,6 +16,8 @@ export default function LoginPage() {
   const [rememberDevice, setRememberDevice] = useState(false)
 
   useEffect(() => {
+    let autoLoginAttempted = false
+
     async function checkBiometric() {
       const available = isWebAuthnAvailable() && await isPlatformAuthenticatorAvailable()
       setBiometricAvailable(available)
@@ -25,6 +27,11 @@ export default function LoginPage() {
           const res = await fetch('/api/auth/webauthn/available')
           const data = await res.json()
           setBiometricRegistered(data.available)
+
+          if (data.available && !autoLoginAttempted) {
+            autoLoginAttempted = true
+            await autoBiometricLogin()
+          }
         } catch {
           setBiometricRegistered(false)
         }
@@ -32,6 +39,31 @@ export default function LoginPage() {
     }
     checkBiometric()
   }, [])
+
+  async function autoBiometricLogin() {
+    try {
+      const res = await fetch('/api/auth/webauthn/authenticate')
+      const data = await res.json()
+
+      if (!data.credentialIds || data.credentialIds.length === 0) {
+        return
+      }
+
+      const credential = await authenticateCredential(data.credentialIds)
+
+      const verifyRes = await fetch('/api/auth/webauthn/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credential),
+      })
+
+      if (verifyRes.ok) {
+        window.location.href = '/sales'
+      }
+    } catch {
+      // silent fail for auto login
+    }
+  }
 
   const isLocalNetwork = typeof window !== 'undefined' && !['localhost', '127.0.0.1'].includes(window.location.hostname)
 
