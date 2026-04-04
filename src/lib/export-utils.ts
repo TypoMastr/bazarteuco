@@ -228,93 +228,96 @@ function exportSalesPDF(doc: jsPDF, data: any): void {
   doc.setTextColor(100, 100, 100)
   doc.text(`Vendas: ${sales.length}  |  Receita: ${formatCurrency(total)}`, 14, 16)
 
-  const tableRows: (string | { content: string; styles: Record<string, any> })[][] = []
+  let startY = 24
 
-  sales.forEach((sale) => {
+  sales.forEach((sale, saleIdx) => {
     const uid = sale.uniqueIdentifier || sale.id
     const saleLabel = sale.id && /^\d+$/.test(sale.id) ? `#${sale.id}` : (sale.orderName || `#${uid.slice(-6)}`)
     const { date: saleDate, time: saleTime } = formatDateTimeBR(sale.creationDate)
-
     const items = saleItemsMap[uid] || sale.items || []
+
+    if (startY > 255) {
+      doc.addPage()
+      startY = 12
+    }
+
+    // Sale header with green background
+    doc.setFillColor(34, 139, 34)
+    doc.roundedRect(10, startY, 190, 8, 1.5, 1.5, 'F')
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(255, 255, 255)
+    doc.text('Venda', 12, startY + 5.5)
+    doc.text('Data', 32, startY + 5.5)
+    doc.text('Horario', 60, startY + 5.5)
+    doc.text('Produto', 78, startY + 5.5)
+    doc.text('Valor', 178, startY + 5.5)
+    startY += 9
 
     if (items.length > 0) {
       items.forEach((item: any, idx: number) => {
+        if (startY > 270) {
+          doc.addPage()
+          startY = 12
+        }
+
         const itemName = item.product?.name || item.productName || 'Valor Avulso'
         const qty = item.quantity || 1
         const itemLabel = qty > 1 ? `${itemName} (${qty}x)` : itemName
         const itemValue = formatCurrency(item.netItem || item.total || 0)
 
+        const bgFill = idx % 2 === 0 ? [250, 250, 250] : [255, 255, 255]
+        doc.setFillColor(bgFill[0], bgFill[1], bgFill[2])
+        doc.rect(10, startY, 190, 7, 'F')
+
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(7)
+        doc.setTextColor(80, 80, 80)
+
         if (idx === 0) {
-          tableRows.push([
-            saleLabel,
-            saleDate,
-            saleTime,
-            itemLabel,
-            itemValue,
-          ])
-        } else {
-          tableRows.push([
-            { content: '', styles: { fillColor: [245, 245, 245] } },
-            { content: '', styles: { fillColor: [245, 245, 245] } },
-            { content: '', styles: { fillColor: [245, 245, 245] } },
-            { content: itemLabel, styles: { fillColor: [245, 245, 245] } },
-            { content: itemValue, styles: { fillColor: [245, 245, 245] } },
-          ])
+          doc.setFont('helvetica', 'bold')
+          doc.setTextColor(34, 139, 34)
+          doc.text(saleLabel, 12, startY + 5)
+          doc.setFont('helvetica', 'normal')
+          doc.setTextColor(100, 100, 100)
+          doc.text(saleDate, 32, startY + 5)
+          doc.text(saleTime, 60, startY + 5)
         }
+
+        doc.text(itemLabel, 78, startY + 5)
+        doc.text(itemValue, 178, startY + 5)
+        startY += 7
       })
 
-      tableRows.push([
-        { content: '', styles: { fontStyle: 'bold' } },
-        { content: '', styles: { fontStyle: 'bold' } },
-        { content: '', styles: { fontStyle: 'bold' } },
-        { content: 'Total', styles: { fontStyle: 'bold', textColor: [34, 139, 34], fillColor: [230, 250, 235] } },
-        { content: formatCurrency(sale.totalAmount || 0), styles: { fontStyle: 'bold', textColor: [34, 139, 34], fillColor: [230, 250, 235], halign: 'right' } },
-      ])
-
-      tableRows.push([
-        { content: '', styles: { rowHeight: 4 } },
-        { content: '', styles: { rowHeight: 4 } },
-        { content: '', styles: { rowHeight: 4 } },
-        { content: '', styles: { rowHeight: 4 } },
-        { content: '', styles: { rowHeight: 4 } },
-      ])
-    } else {
-      tableRows.push([
-        saleLabel,
-        saleDate,
-        saleTime,
-        '—',
-        formatCurrency(sale.totalAmount || 0),
-      ])
-    }
-  })
-
-  autoTable(doc, {
-    head: [['Venda', 'Data', 'Horario', 'Produto', 'Valor']],
-    body: tableRows,
-    startY: 22,
-    styles: { fontSize: 7, cellPadding: 2 },
-    headStyles: {
-      fillColor: [34, 139, 34],
-      textColor: 255,
-      fontStyle: 'bold',
-      fontSize: 7,
-    },
-    columnStyles: {
-      0: { cellWidth: 20, fontStyle: 'bold' },
-      1: { cellWidth: 28 },
-      2: { cellWidth: 18, halign: 'center' },
-      3: { cellWidth: 85 },
-      4: { cellWidth: 28, halign: 'right' },
-    },
-    margin: { left: 10, right: 10 },
-    theme: 'grid',
-    didParseCell: function(data) {
-      if (data.section === 'body' && data.column.index === 0) {
-        data.cell.styles.textColor = [34, 139, 34]
-        data.cell.styles.fontStyle = 'bold'
+      // Total row
+      if (startY > 265) {
+        doc.addPage()
+        startY = 12
       }
-    },
+      doc.setFillColor(230, 250, 235)
+      doc.rect(10, startY, 190, 7, 'F')
+      doc.setFontSize(8)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(34, 139, 34)
+      doc.text('Total', 150, startY + 5)
+      doc.text(formatCurrency(sale.totalAmount || 0), 178, startY + 5)
+      startY += 10
+    } else {
+      doc.setFontSize(7)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(100, 100, 100)
+      doc.text(saleLabel, 12, startY + 5)
+      doc.text(saleDate, 32, startY + 5)
+      doc.text(saleTime, 60, startY + 5)
+      doc.text('—', 78, startY + 5)
+      doc.text(formatCurrency(sale.totalAmount || 0), 178, startY + 5)
+      startY += 10
+    }
+
+    // White space between sales
+    if (saleIdx < sales.length - 1) {
+      startY += 4
+    }
   })
 }
 
