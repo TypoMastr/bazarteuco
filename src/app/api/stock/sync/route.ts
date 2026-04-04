@@ -15,8 +15,13 @@ function getHeaders() {
 async function fetchAPI(path: string) {
   const url = `${API_BASE}${path}`
   const res = await fetch(url, { headers: getHeaders() })
-  if (!res.ok) throw new Error(`API Error: ${res.status}`)
-  return res.json()
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`API Error: ${res.status} - ${text}`)
+  }
+  const text = await res.text()
+  if (!text) return { items: [] }
+  return JSON.parse(text)
 }
 
 export async function GET() {
@@ -47,7 +52,7 @@ export async function POST() {
       
       while (true) {
         const data = await fetchAPI(`/products?page=${page}&size=${pageSize}`)
-        const products = data.items || []
+        const products = Array.isArray(data?.items) ? data.items : []
         
         if (products.length === 0) break
         
