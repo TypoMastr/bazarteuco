@@ -55,8 +55,16 @@ export async function generateSiteHtml(): Promise<string> {
 
   const visibleCategories = categories.filter(c => !c.oculto)
 
+  const catNameMap = new Map<string, number>()
+  visibleCategories.forEach(c => catNameMap.set(c.name.toLowerCase(), c.id))
+
   const catalogo = visibleCategories.map(cat => {
-    const catProducts = products.filter(p => p.category_id === cat.id && p.name)
+    const catProducts = products.filter(p => {
+      if (!p.name) return false
+      if (p.category_id === cat.id) return true
+      if (p.category_name && p.category_name.toLowerCase() === cat.name.toLowerCase()) return true
+      return false
+    })
     return {
       categoria: cat.name,
       emoji: getEmoji(cat.name),
