@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Roboto:wght@300;400;500;700&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Teuco-inspired Palette - Lighter green like teuco.com.br */
+    --teuco-green: #469E5D;
+    --teuco-green-dark: #2E7D32;
+    --teuco-green-light: #81C784;
+    --teuco-green-bright: #A5D6A7;
+    --teuco-green-soft: #E8F5E9;
+    --teuco-green-subtle: #C8E6C9;
+    --teuco-bg: #F5F7FA;
+    --teuco-text: #1A1A1A;
+    --teuco-text-muted: #6B7280;
+    --teuco-surface: #ffffff;
+    --teuco-border: #E5E7EB;
+    
+    /* Semantic mapping */
+    --background: var(--teuco-bg);
+    --foreground: var(--teuco-text);
+    --primary: var(--teuco-green);
+    --primary-foreground: #ffffff;
+    --card: var(--teuco-surface);
+    --card-foreground: var(--teuco-text);
+    --border: var(--teuco-border);
+
+    /* Shadows */
+    --shadow-teuco: 0 2px 8px 0 rgba(70, 158, 93, 0.15);
+    --shadow-teuco-hover: 0 4px 16px 0 rgba(70, 158, 93, 0.25);
+  }
+
+  * { box-sizing: border-box; }
+  
+  body {
+    background-color: var(--teuco-bg);
+    color: var(--teuco-text);
+    font-family: 'Roboto', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', sans-serif;
+  }
+}
+
+@layer utilities {
+  .card-teuco {
+    background: white;
+    border-radius: 8px;
+    box-shadow: var(--shadow-teuco);
+    border-left: 3px solid var(--teuco-green);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: visible;
+  }
+  
+  .card-teuco:hover {
+    box-shadow: var(--shadow-teuco-hover);
+  }
+
+  .icon-badge-teuco {
+    width: 40px;
+    height: 40px;
+    background: var(--teuco-green);
+    color: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(70, 158, 93, 0.3);
+    border: 2px solid white;
+  }
+
+  .pill-button {
+    border-radius: 9999px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.75rem;
+  }
+
+  .animate-slide-up {
+    animation: slideInUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+}
+
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
