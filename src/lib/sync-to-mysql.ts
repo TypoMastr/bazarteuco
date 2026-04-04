@@ -228,6 +228,12 @@ export async function syncPendingProducts(): Promise<{ success: number; failed: 
         [result.id, JSON.stringify(result), product.id]
       )
       
+      // Update stock with new product ID
+      await executeUpdate(
+        'UPDATE stock SET product_id = ? WHERE product_id = ?',
+        [result.id, product.id]
+      )
+      
       console.log(`[Sync] Synced product ${product.alpha_code} with SmartPOS ID ${result.id}`)
       success++
     } catch (err) {

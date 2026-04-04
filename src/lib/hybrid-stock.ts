@@ -123,60 +123,73 @@ export async function syncProductsFromAPI(): Promise<{ synced: number; failed: n
         break
       }
 
-      for (const product of products) {
-        try {
-          const categoryId = product.category?.id || null
-          const categoryName = product.category?.description || null
-          const apiData = JSON.stringify(product)
+      // Batch insert products
+      const pool = getPool()
+      const conn = await pool.getConnection()
+      try {
+        await conn.beginTransaction()
 
-          await executeUpdate(
-            `INSERT INTO products (id, alpha_code, name, sell_value, cost_value, ean_code, minimum_stock, no_stock, category_id, category_name, api_data, synced_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-             ON DUPLICATE KEY UPDATE
-               alpha_code = VALUES(alpha_code),
-               name = VALUES(name),
-               sell_value = VALUES(sell_value),
-               cost_value = VALUES(cost_value),
-               ean_code = VALUES(ean_code),
-               minimum_stock = VALUES(minimum_stock),
-               no_stock = VALUES(no_stock),
-               category_id = VALUES(category_id),
-               category_name = VALUES(category_name),
-               api_data = VALUES(api_data),
-               synced_at = NOW()`,
-            [
-              product.id,
-              product.alphaCode || '',
-              product.name || '',
-              product.sellValue || 0,
-              product.costValue || 0,
-              product.eanCode || '',
-              product.minimumStock || 0,
-              product.noStock || false,
-              categoryId,
-              categoryName,
-              apiData,
-            ]
-          )
+        for (const product of products) {
+          try {
+            const categoryId = product.category?.id || null
+            const categoryName = product.category?.description || null
 
-          const productName = (product.name || '').toLowerCase()
-          const isRifa = productName.includes('rifa')
-          const isDoacao = productName.includes('doacao') || productName.includes('doação')
-
-          if (!isRifa && !isDoacao) {
-            await executeUpdate(
-              `INSERT INTO stock (product_id, quantity)
-               VALUES (?, 0)
-               ON DUPLICATE KEY UPDATE product_id = product_id`,
-              [product.id]
+            await conn.execute(
+              `INSERT INTO products (id, alpha_code, name, sell_value, cost_value, ean_code, minimum_stock, no_stock, category_id, category_name, api_data, synced_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+               ON DUPLICATE KEY UPDATE
+                 alpha_code = VALUES(alpha_code),
+                 name = VALUES(name),
+                 sell_value = VALUES(sell_value),
+                 cost_value = VALUES(cost_value),
+                 ean_code = VALUES(ean_code),
+                 minimum_stock = VALUES(minimum_stock),
+                 no_stock = VALUES(no_stock),
+                 category_id = VALUES(category_id),
+                 category_name = VALUES(category_name),
+                 api_data = VALUES(api_data),
+                 synced_at = NOW()`,
+              [
+                product.id,
+                product.alphaCode || '',
+                product.name || '',
+                product.sellValue || 0,
+                product.costValue || 0,
+                product.eanCode || '',
+                product.minimumStock || 0,
+                product.noStock || false,
+                categoryId,
+                categoryName,
+                JSON.stringify(product),
+              ]
             )
-          }
 
-          synced++
-        } catch (err) {
-          console.error(`Erro ao sincronizar produto ${product.id}:`, err)
-          failed++
+            const productName = (product.name || '').toLowerCase()
+            const isRifa = productName.includes('rifa')
+            const isDoacao = productName.includes('doacao') || productName.includes('doação')
+
+            if (!isRifa && !isDoacao) {
+              await conn.execute(
+                `INSERT INTO stock (product_id, quantity)
+                 VALUES (?, 0)
+                 ON DUPLICATE KEY UPDATE product_id = product_id`,
+                [product.id]
+              )
+            }
+
+            synced++
+          } catch (err) {
+            console.error(`Erro ao sincronizar produto ${product.id}:`, err)
+            failed++
+          }
         }
+
+        await conn.commit()
+      } catch (err) {
+        await conn.rollback()
+        throw err
+      } finally {
+        conn.release()
       }
 
       page++

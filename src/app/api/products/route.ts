@@ -137,6 +137,18 @@ export async function POST(request: NextRequest) {
     try {
       data = await createProduct(smartposPayload)
       console.log('[API] SmartPOS response:', JSON.stringify(data))
+      
+      // Save product to MySQL first
+      try {
+        await executeUpdate(
+          `INSERT INTO products (id, alpha_code, name, sell_value, cost_value, minimum_stock, category_id, api_data, synced_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+           ON DUPLICATE KEY UPDATE alpha_code = VALUES(alpha_code), name = VALUES(name), sell_value = VALUES(sell_value), api_data = VALUES(api_data), synced_at = NOW()`,
+          [data.id, data.alphaCode, data.name, data.sellValue, data.costValue, data.minimumStock, data.category?.id || data.category, JSON.stringify(data)]
+        )
+      } catch (dbErr) {
+        console.error('[API] MySQL insert error:', dbErr)
+      }
     } catch (smartposError: any) {
       // SmartPOS API failing - create locally as fallback
       console.error('[API] SmartPOS failed, creating locally:', smartposError.message)
