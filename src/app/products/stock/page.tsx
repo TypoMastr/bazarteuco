@@ -534,9 +534,132 @@ export default function StockPage() {
                       >
                         <Edit2 className="h-4 w-4" />
                       </Button>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
+          )
+        })}
+
+        {filteredProducts.length === 0 && (
+          <div className="text-center py-12 text-[var(--teuco-text-muted)]">
+            <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p className="text-xs font-bold uppercase">Nenhum produto encontrado</p>
           </div>
         )}
+      </div>
+
+      {/* Bulk edit floating button */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-20 left-4 right-4 lg:left-72 lg:right-4 z-30">
+          <div className="bg-[var(--teuco-green)] text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-between">
+            <span className="text-sm font-bold">{selectedIds.size} produto(s) selecionado(s)</span>
+            <Button variant="ghost" size="sm" className="bg-white text-[var(--teuco-green)] hover:bg-white/90" onClick={() => {
+              const firstSelected = products.find(p => selectedIds.has(p.productId))
+              if (firstSelected) openEditModal(firstSelected)
+            }} disabled={updating}>
+              <Edit2 className="h-4 w-4 mr-1" />
+              Editar
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Stock Modal - Mobile */}
+      {editingProduct && (
+        <div className="fixed inset-0 z-50 flex items-end lg:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={closeEditModal} />
+          <div className="relative bg-white rounded-t-2xl w-full p-6 pb-10 shadow-2xl">
+            <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-6" />
+            
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="min-w-0 flex-1">
+                {selectedIds.size > 1 ? (
+                  <>
+                    <p className="text-sm font-black text-[var(--teuco-text)] uppercase">
+                      Editar {selectedIds.size} itens
+                    </p>
+                    <p className="text-xs text-[var(--teuco-text-muted)] font-bold">
+                      {editingProduct.name} + {selectedIds.size - 1} outro(s)
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-black text-[var(--teuco-text)] uppercase truncate">
+                      {editingProduct.name}
+                    </p>
+                    {editingProduct.alphaCode && (
+                      <p className="text-xs text-[var(--teuco-text-muted)] font-bold">Código: {editingProduct.alphaCode}</p>
+                    )}
+                  </>
+                )}
+              </div>
+              <button onClick={closeEditModal} className="p-2 ml-2 hover:bg-gray-100 rounded-full shrink-0">
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Quantity display */}
+            <div className="text-center mb-6">
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Quantidade Atual</p>
+              <button
+                onClick={() => {
+                  modalInputRef.current?.focus()
+                  modalInputRef.current?.select()
+                }}
+                className="text-6xl font-black text-[var(--teuco-green)] cursor-pointer hover:opacity-80 transition-opacity"
+              >
+                {modalQuantity}
+              </button>
+            </div>
+
+            {/* Plus/Minus buttons */}
+            <div className="flex items-center justify-center gap-6 mb-8">
+              <button
+                onClick={handleModalDecrement}
+                className="w-16 h-16 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center active:scale-95 transition-all"
+              >
+                <Minus className="h-8 w-8 text-gray-700" />
+              </button>
+              
+              <input
+                ref={modalInputRef}
+                type="number"
+                inputMode="numeric"
+                value={modalQuantity}
+                onChange={(e) => setModalQuantity(e.target.value)}
+                className="w-28 h-16 text-center text-3xl font-black border-2 border-[var(--teuco-green)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--teuco-green)]/30"
+              />
+              
+              <button
+                onClick={handleModalIncrement}
+                className="w-16 h-16 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center active:scale-95 transition-all"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+              </button>
+            </div>
+
+            {/* Save/Cancel buttons */}
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={closeEditModal}
+                className="flex-1 h-14 text-sm font-black uppercase tracking-wider"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleModalSave}
+                disabled={updating}
+                className="flex-1 h-14 text-sm font-black uppercase tracking-wider shadow-lg shadow-[var(--teuco-green)]/30"
+              >
+                {updating ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       <SyncProgressModal
