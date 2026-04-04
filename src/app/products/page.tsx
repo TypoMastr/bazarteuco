@@ -48,11 +48,10 @@ export default function ProductsPage() {
   async function handleUpdateSite() {
     setUpdatingSite(true)
     try {
-      await refetch()
-      await new Promise(r => setTimeout(r, 1000))
       const res = await fetch('/api/site/generate', { method: 'POST' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Erro')
+      await refetch()
       toast.success('Site atualizado com sucesso!')
     } catch (err: any) {
       toast.error(err.message || 'Erro ao atualizar site')

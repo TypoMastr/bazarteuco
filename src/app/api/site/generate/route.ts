@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server'
 import { generateSiteHtml } from '@/lib/site-generator'
+import { syncProductsToMySQL, syncCategoriesToMySQL } from '@/lib/sync-to-mysql'
 import * as ftp from 'basic-ftp'
 import { Readable } from 'stream'
 
 export async function POST() {
   try {
+    await syncCategoriesToMySQL()
+    await syncProductsToMySQL()
+
     const html = await generateSiteHtml()
 
     const ftpHost = process.env.FTP_HOST
