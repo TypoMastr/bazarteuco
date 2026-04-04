@@ -253,9 +253,13 @@ export default function EditProductPage() {
     setDeleting(true)
     try {
       const res = await fetch(`/api/products/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Erro')
-      toast.success('Produto excluído')
-      router.push('/products')
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || data.error) {
+        toast.error(data.error || 'Erro ao excluir produto')
+      } else {
+        toast.success('Produto excluído')
+        router.push('/products')
+      }
     } catch {
       toast.error('Erro ao excluir produto')
     } finally {
