@@ -272,11 +272,11 @@ function exportSalesPDF(doc: jsPDF, data: any): void {
       ])
 
       tableRows.push([
-        { content: '', styles: { fillColor: [240, 240, 240], cellPadding: 1 } },
-        { content: '', styles: { fillColor: [240, 240, 240], cellPadding: 1 } },
-        { content: '', styles: { fillColor: [240, 240, 240], cellPadding: 1 } },
-        { content: '', styles: { fillColor: [240, 240, 240], cellPadding: 1 } },
-        { content: '', styles: { fillColor: [240, 240, 240], cellPadding: 1 } },
+        { content: '', styles: { rowHeight: 4 } },
+        { content: '', styles: { rowHeight: 4 } },
+        { content: '', styles: { rowHeight: 4 } },
+        { content: '', styles: { rowHeight: 4 } },
+        { content: '', styles: { rowHeight: 4 } },
       ])
     } else {
       tableRows.push([
