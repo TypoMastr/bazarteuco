@@ -1,6 +1,6 @@
 import { getProducts, createProduct } from '@/lib/smartpos-api'
 import { syncProductsToMySQL } from '@/lib/sync-to-mysql'
-import { executeUpdate } from '@/lib/mysql-client'
+import { executeUpdate, executeQuery } from '@/lib/mysql-client'
 import { NextRequest, NextResponse } from 'next/server'
 
 const SYNC_COOLDOWN_MS = 5 * 60 * 1000 // 5 minutes
@@ -36,6 +36,30 @@ export async function GET(request: NextRequest) {
       data = await getProducts(params)
     } else {
       data = await getAllProducts()
+    }
+    
+    // Also fetch locally created products (pending sync)
+    try {
+      const localProducts = await executeQuery<any>('SELECT * FROM products WHERE id < 0')
+      if (localProducts.length > 0) {
+        const localItems = localProducts.map((p: any) => {
+          const apiData = p.api_data ? JSON.parse(p.api_data) : {}
+          return {
+            id: p.id,
+            alphaCode: p.alpha_code,
+            name: p.name,
+            sellValue: p.sell_value,
+            costValue: p.cost_value,
+            minimumStock: p.minimum_stock,
+            category: apiData.category,
+            pendingSync: true,
+          }
+        })
+        data.items = [...localItems, ...data.items]
+        data.totalRecords = (data.totalRecords || 0) + localProducts.length
+      }
+    } catch (err) {
+      console.error('[API] Error fetching local products:', err)
     }
     
     // Sync para MySQL em background com cooldown
