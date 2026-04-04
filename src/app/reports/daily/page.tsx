@@ -17,6 +17,9 @@ import { ExportModal } from '@/components/export-modal'
 import { PageHeader } from '@/components/page-header'
 import { matchesGiraDaMata, matchesEventos, calculateCategoryRevenue, hasCategoryProducts } from '@/lib/report-categories'
 import Link from 'next/link'
+import { useSalesStream } from '@/hooks/use-sales-stream'
+import { SyncCatchUpModal } from '@/components/sync-catchup-modal'
+import { Wifi, WifiOff, WifiLow } from 'lucide-react'
 
 const ITEM_FETCH_CONCURRENCY = 4
 
@@ -136,6 +139,16 @@ export default function DailyReportPage() {
     return hasCategoryProducts(report.products, matchesEventos)
   }, [report])
 
+  // Real-time sync
+  const handleNewSale = useCallback(() => {
+    if (selectedDate) fetchReport(selectedDate, true)
+  }, [selectedDate, fetchReport])
+
+  const { status: streamStatus, isCatchingUp, catchUpProgress: streamProgress, catchUpMessage: streamMessage } = useSalesStream({
+    enabled: !!report,
+    onNewSale: handleNewSale,
+  })
+
   function SortIcon({ field }: { field: 'quantity' | 'total' }) {
     if (sortField !== field) return <ArrowUpDown className="h-3 w-3 inline ml-1 opacity-40" />
     return sortDir === 'desc'
@@ -166,6 +179,20 @@ export default function DailyReportPage() {
         backLink="/reports"
         actions={
           <>
+            {report && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border text-xs font-bold uppercase">
+                {streamStatus === 'connected' ? (
+                  <Wifi className="h-3.5 w-3.5 text-[var(--teuco-green)]" />
+                ) : streamStatus === 'reconnecting' ? (
+                  <WifiLow className="h-3.5 w-3.5 text-amber-500" />
+                ) : (
+                  <WifiOff className="h-3.5 w-3.5 text-red-500" />
+                )}
+                <span className={streamStatus === 'connected' ? 'text-[var(--teuco-green)]' : streamStatus === 'reconnecting' ? 'text-amber-500' : 'text-red-500'}>
+                  {streamStatus === 'connected' ? 'Ao vivo' : streamStatus === 'reconnecting' ? 'Conectando...' : 'Offline'}
+                </span>
+              </div>
+            )}
             {report && <ExportModal type="report" data={report} sortedProducts={sortedProducts} extraData={{ correctedBazarRevenue, giraDaMataRevenue, eventosRevenue, showGiraDaMata, showEventos }} />}
             <Button variant="tonal" onClick={handleRefresh} disabled={refreshing} className="h-9 px-3 text-xs">
               <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
@@ -328,6 +355,13 @@ export default function DailyReportPage() {
           </div>
         </div>
       )}
+
+      <SyncCatchUpModal
+        open={isCatchingUp}
+        progress={streamProgress}
+        message={streamMessage}
+        onComplete={() => {}}
+      />
     </div>
   )
 }
