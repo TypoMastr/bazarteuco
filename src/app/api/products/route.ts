@@ -3,6 +3,9 @@ import { syncProductsToMySQL } from '@/lib/sync-to-mysql'
 import { executeUpdate } from '@/lib/mysql-client'
 import { NextRequest, NextResponse } from 'next/server'
 
+const SYNC_COOLDOWN_MS = 5 * 60 * 1000 // 5 minutes
+let lastProductsSync = 0
+
 async function getAllProducts(): Promise<{ items: any[]; totalRecords: number }> {
   const allItems: any[] = []
   let page = 1
@@ -35,8 +38,12 @@ export async function GET(request: NextRequest) {
       data = await getAllProducts()
     }
     
-    // Sync para MySQL em background (não bloqueia a resposta)
-    syncProductsToMySQL().catch(err => console.error('[Sync] Products sync error:', err))
+    // Sync para MySQL em background com cooldown
+    const now = Date.now()
+    if (now - lastProductsSync > SYNC_COOLDOWN_MS) {
+      lastProductsSync = now
+      syncProductsToMySQL().catch(err => console.error('[Sync] Products sync error:', err))
+    }
     
     const response = NextResponse.json(data)
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')

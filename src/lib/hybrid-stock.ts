@@ -281,19 +281,11 @@ export async function updateStockBatch(updates: { productId: number; quantity: n
 export async function decrementStockOnSale(saleItems: { productId: number; quantity: number }[]): Promise<void> {
   for (const item of saleItems) {
     try {
-      const current = await executeQuery<any>(
-        'SELECT quantity FROM stock WHERE product_id = ?',
-        [item.productId]
-      )
-
-      const currentQty = current.length > 0 ? Number(current[0].quantity) : 0
-      const newQty = Math.max(0, currentQty - item.quantity)
-
+      // Atomic decrement to prevent race conditions
       await executeUpdate(
-        `INSERT INTO stock (product_id, quantity, updated_at)
-         VALUES (?, ?, NOW())
-         ON DUPLICATE KEY UPDATE quantity = ?, updated_at = NOW()`,
-        [item.productId, newQty, newQty]
+        `UPDATE stock SET quantity = GREATEST(0, quantity - ?), updated_at = NOW()
+         WHERE product_id = ?`,
+        [item.quantity, item.productId]
       )
 
       await executeUpdate(

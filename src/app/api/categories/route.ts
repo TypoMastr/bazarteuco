@@ -2,13 +2,20 @@ import { getCategories, createCategory } from '@/lib/smartpos-api'
 import { syncCategoriesToMySQL } from '@/lib/sync-to-mysql'
 import { NextRequest, NextResponse } from 'next/server'
 
+const SYNC_COOLDOWN_MS = 5 * 60 * 1000
+let lastCategoriesSync = 0
+
 export async function GET(request: NextRequest) {
   try {
     const params = Object.fromEntries(request.nextUrl.searchParams)
     const data = await getCategories(params)
     
-    // Sync para MySQL em background
-    syncCategoriesToMySQL().catch(err => console.error('[Sync] Categories sync error:', err))
+    // Sync para MySQL em background com cooldown
+    const now = Date.now()
+    if (now - lastCategoriesSync > SYNC_COOLDOWN_MS) {
+      lastCategoriesSync = now
+      syncCategoriesToMySQL().catch(err => console.error('[Sync] Categories sync error:', err))
+    }
     
     const response = NextResponse.json(data)
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
@@ -29,8 +36,8 @@ export async function POST(request: NextRequest) {
     }
     const data = await createCategory(body)
     
-    // Sync imediato após criar
-    await syncCategoriesToMySQL()
+    // Sync imediato após criar (fire-and-forget)
+    syncCategoriesToMySQL().catch(err => console.error('[Sync] Categories sync error:', err))
     
     return NextResponse.json(data)
   } catch (error) {

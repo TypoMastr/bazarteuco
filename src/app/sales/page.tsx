@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { formatCurrency, formatDate, cn } from '@/lib/utils'
+import { formatCurrency, formatDate, cn, todayBR, formatDateBR } from '@/lib/utils'
 import {
   Search, Loader2, Calendar, X,
   ShoppingCart, Package, RefreshCw,
@@ -15,14 +15,6 @@ import { ExportModal } from '@/components/export-modal'
 import { PageHeader } from '@/components/page-header'
 
 const ITEM_FETCH_CONCURRENCY = 4
-
-function todayBR() {
-  return new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }).split('/').reverse().join('-')
-}
-function formatDateBR(dateStr: string) {
-  const [y, m, d] = dateStr.split('-')
-  return `${d}/${m}/${y}`
-}
 
 async function fetchSaleItems(uid: string): Promise<any[]> {
   try {
@@ -81,6 +73,7 @@ export default function SalesPage() {
   const [syncing, setSyncing] = useState(false)
   const [newSalesCount, setNewSalesCount] = useState(0)
   const decrementedSalesRef = useRef<Set<string>>(new Set())
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const salesRef = useRef(sales)
   const saleItemsRef = useRef(saleItems)
@@ -200,7 +193,9 @@ export default function SalesPage() {
 
   useEffect(() => {
     if (typeof document !== 'undefined' && document.hidden) return
-    const interval = setInterval(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    
+    intervalRef.current = setInterval(() => {
       const currentLatestDate = latestDate
       if (!currentLatestDate) return
       const now = new Date().toISOString()
@@ -251,12 +246,12 @@ export default function SalesPage() {
     }, 60000)
     
     const handleVisibilityChange = () => {
-      if (document.hidden) clearInterval(interval)
+      if (document.hidden && intervalRef.current) clearInterval(intervalRef.current)
     }
     document?.addEventListener('visibilitychange', handleVisibilityChange)
     
     return () => {
-      clearInterval(interval)
+      if (intervalRef.current) clearInterval(intervalRef.current)
       document?.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [latestDate])

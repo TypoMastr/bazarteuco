@@ -13,14 +13,12 @@ async function fetchAPI(path: string, options: RequestInit = {}) {
   const res = await fetch(url, {
     ...options,
     headers: { ...getHeaders(), ...options.headers },
-    next: { revalidate: options.method === 'GET' ? 60 : 0 },
   })
   if (!res.ok) {
     const error = await res.text()
     throw new Error(`SmartPOS API Error: ${res.status} - ${error}`)
   }
-  const text = await res.text()
-  return text ? JSON.parse(text) : null
+  return res.json()
 }
 
 export async function getSales(params?: Record<string, string>) {

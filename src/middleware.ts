@@ -5,24 +5,25 @@ const PUBLIC_PATHS = [
   '/login',
   '/api/auth/login',
   '/api/auth/verify',
+  '/api/auth/webauthn/authenticate',
+  '/api/auth/webauthn/available',
+  '/api/auth/webauthn/register',
   '/api/stock/sync',
   '/api/stock/decrement',
-  '/api/products/bulk-update',
-  '/api/stock/bulk-reset',
-  '/api/products/bulk-config',
   '/api/sales/sync',
   '/api/reports/mysql',
+  '/api/site/generate',
+  '/api/health',
 ]
 
-const SECRET = process.env.SESSION_SECRET || 'default-insecure-secret-change-me'
-
-function getCookieValue(cookies: string, name: string): string | null {
-  const match = cookies.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
-  return match ? decodeURIComponent(match[1]) : null
+const SECRET = process.env.SESSION_SECRET
+if (!SECRET) {
+  throw new Error('SESSION_SECRET environment variable is required')
 }
 
+const encoder = new TextEncoder()
+
 async function sign(payload: string): Promise<string> {
-  const encoder = new TextEncoder()
   const key = await crypto.subtle.importKey(
     'raw',
     encoder.encode(SECRET),
@@ -40,6 +41,16 @@ async function verify(token: string): Promise<boolean> {
   if (parts.length < 2) return false
   const hex = parts.pop()!
   const payload = parts.join('.')
+
+  try {
+    const parsed = JSON.parse(payload)
+    if (parsed.exp && parsed.exp < Date.now()) {
+      return false
+    }
+  } catch {
+    return false
+  }
+
   const expected = await sign(payload)
   return expected === token
 }
@@ -51,8 +62,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const cookieHeader = request.headers.get('cookie') || ''
-  const token = getCookieValue(cookieHeader, 'bazar_session')
+  const token = request.cookies.get('bazar_session')?.value
 
   if (!token) {
     return NextResponse.redirect(new URL('/login', request.url))

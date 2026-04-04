@@ -19,10 +19,10 @@ export function getPool() {
     pool = mysql.createPool({
       ...mysqlConfig,
       waitForConnections: true,
-      connectionLimit: 2,
-      queueLimit: 0,
+      connectionLimit: 10,
+      queueLimit: 50,
       connectTimeout: 10000,
-      idleTimeout: 60000,
+      idleTimeout: 600000,
     })
   }
   return pool

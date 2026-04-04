@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const SECRET = process.env.SESSION_SECRET || 'default-insecure-secret-change-me'
+const SECRET = process.env.SESSION_SECRET
+if (!SECRET) {
+  throw new Error('SESSION_SECRET environment variable is required')
+}
 const VALID_PASSWORD = process.env.AUTH_PASSWORD || ''
 
 async function sign(payload: string): Promise<string> {
@@ -22,6 +25,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const password = body?.password
     const rememberDevice = body?.rememberDevice
+
+    if (!password || typeof password !== 'string') {
+      return NextResponse.json({ error: 'Senha obrigatória' }, { status: 400 })
+    }
 
     if (password !== VALID_PASSWORD) {
       return NextResponse.json({ error: 'Senha incorreta' }, { status: 401 })

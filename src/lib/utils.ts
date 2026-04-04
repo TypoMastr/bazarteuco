@@ -47,19 +47,14 @@ export function formatDateTimeBR(isoString: string): string {
 }
 
 export function todayBR(): string {
-  const now = new Date()
-  const offset = now.getTimezoneOffset()
-  const saoPauloOffset = 180 // UTC-3
-  const diff = saoPauloOffset + offset
-  const spDate = new Date(now.getTime() + diff * 60 * 1000)
-  return spDate.toISOString().split('T')[0]
+  return new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }).split('/').reverse().join('-')
 }
 
 export function daysAgoBR(days: number): string {
   const now = new Date()
-  const offset = now.getTimezoneOffset()
-  const saoPauloOffset = 180
-  const diff = saoPauloOffset + offset
-  const spDate = new Date(now.getTime() + diff * 60 * 1000 - days * 24 * 60 * 60 * 1000)
+  const spStr = now.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+  const [d, m, y] = spStr.split('/')
+  const spDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d))
+  spDate.setDate(spDate.getDate() - days)
   return spDate.toISOString().split('T')[0]
 }

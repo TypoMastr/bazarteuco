@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Download, Send, FileText, X } from 'lucide-react'
+import { Download, Send, FileText, X, Loader2 } from 'lucide-react'
 import { exportToPDF, exportToWhatsApp, ExportType, ProductData, StockData, SaleData, ReportData } from '@/lib/export-utils'
 
 type ExportData = ProductData[] | StockData[] | SaleData[] | ReportData
@@ -17,6 +17,7 @@ interface ExportModalProps {
 
 export function ExportModal({ type, data, sortedProducts, saleItems, dateRange, extraData }: ExportModalProps) {
   const [open, setOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   const getExportData = (): ExportData => {
     if (type === 'report' && sortedProducts && typeof data === 'object' && 'summary' in data) {
@@ -29,13 +30,23 @@ export function ExportModal({ type, data, sortedProducts, saleItems, dateRange, 
   }
 
   function handlePDF() {
-    exportToPDF(type, getExportData())
-    setOpen(false)
+    setExporting(true)
+    try {
+      exportToPDF(type, getExportData())
+    } finally {
+      setExporting(false)
+      setOpen(false)
+    }
   }
 
   function handleWhatsApp() {
-    exportToWhatsApp(type, getExportData())
-    setOpen(false)
+    setExporting(true)
+    try {
+      exportToWhatsApp(type, getExportData())
+    } finally {
+      setExporting(false)
+      setOpen(false)
+    }
   }
 
   return (
@@ -51,11 +62,11 @@ export function ExportModal({ type, data, sortedProducts, saleItems, dateRange, 
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+          <div className="absolute inset-0 bg-black/50" onClick={() => !exporting && setOpen(false)} />
           <div className="relative bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <h3 className="font-black text-[var(--teuco-text)] uppercase text-sm">Exportar Dados</h3>
-              <button onClick={() => setOpen(false)} className="p-1 hover:bg-gray-100 rounded">
+              <button onClick={() => !exporting && setOpen(false)} className="p-1 hover:bg-gray-100 rounded">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -65,10 +76,11 @@ export function ExportModal({ type, data, sortedProducts, saleItems, dateRange, 
               </p>
               <button
                 onClick={handlePDF}
-                className="w-full p-4 rounded-lg border-2 border-gray-100 hover:border-[var(--teuco-green)] hover:bg-[var(--teuco-green-soft)] transition-colors flex items-center gap-3"
+                disabled={exporting}
+                className="w-full p-4 rounded-lg border-2 border-gray-100 hover:border-[var(--teuco-green)] hover:bg-[var(--teuco-green-soft)] transition-colors flex items-center gap-3 disabled:opacity-50"
               >
                 <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-red-600" />
+                  {exporting ? <Loader2 className="h-5 w-5 text-red-600 animate-spin" /> : <FileText className="h-5 w-5 text-red-600" />}
                 </div>
                 <div className="text-left">
                   <p className="font-bold text-sm text-[var(--teuco-text)]">Exportar PDF</p>
@@ -77,10 +89,11 @@ export function ExportModal({ type, data, sortedProducts, saleItems, dateRange, 
               </button>
               <button
                 onClick={handleWhatsApp}
-                className="w-full p-4 rounded-lg border-2 border-gray-100 hover:border-green-500 hover:bg-green-50 transition-colors flex items-center gap-3"
+                disabled={exporting}
+                className="w-full p-4 rounded-lg border-2 border-gray-100 hover:border-green-500 hover:bg-green-50 transition-colors flex items-center gap-3 disabled:opacity-50"
               >
                 <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                  <Send className="h-5 w-5 text-green-600" />
+                  {exporting ? <Loader2 className="h-5 w-5 text-green-600 animate-spin" /> : <Send className="h-5 w-5 text-green-600" />}
                 </div>
                 <div className="text-left">
                   <p className="font-bold text-sm text-[var(--teuco-text)]">Enviar WhatsApp</p>
