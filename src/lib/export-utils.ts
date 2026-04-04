@@ -255,16 +255,16 @@ function exportSalesPDF(doc: jsPDF, data: any): void {
 
     // Sale header with green background
     doc.setFillColor(34, 139, 34)
-    doc.roundedRect(10, startY, 190, 8, 1.5, 1.5, 'F')
+    doc.roundedRect(10, startY, 190, 9, 1.5, 1.5, 'F')
     doc.setFontSize(7)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(255, 255, 255)
-    doc.text('Venda', 12, startY + 5.5)
-    doc.text('Data', 32, startY + 5.5)
-    doc.text('Horario', 60, startY + 5.5)
-    doc.text('Produto', 78, startY + 5.5)
-    doc.text('Valor', 178, startY + 5.5)
-    startY += 9
+    doc.text('Venda', 12, startY + 6)
+    doc.text('Data', 32, startY + 6)
+    doc.text('Horario', 60, startY + 6)
+    doc.text('Produto', 78, startY + 6)
+    doc.text('Valor', 178, startY + 6)
+    startY += 10
 
     if (items.length > 0) {
       items.forEach((item: any, idx: number) => {
@@ -311,8 +311,10 @@ function exportSalesPDF(doc: jsPDF, data: any): void {
       doc.setFontSize(8)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(34, 139, 34)
-      doc.text('Total', 150, startY + 5)
-      doc.text(formatCurrency(sale.totalAmount || 0), 178, startY + 5)
+      const totalText = formatCurrency(sale.totalAmount || 0)
+      const totalWidth = doc.getTextWidth(totalText)
+      doc.text('Total', 178 - totalWidth - 12, startY + 5)
+      doc.text(totalText, 178, startY + 5)
       startY += 10
     } else {
       doc.setFontSize(7)
