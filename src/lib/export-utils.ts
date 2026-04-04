@@ -78,7 +78,7 @@ export function exportToPDF(
   const doc = new jsPDF()
   const pageTitle = getPageTitle(type)
   
-  if (type !== 'report') {
+  if (type !== 'report' && type !== 'sales') {
     doc.setFontSize(18)
     doc.setFont('helvetica', 'bold')
     doc.text(pageTitle, 14, 16)
