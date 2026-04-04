@@ -1,11 +1,34 @@
 import { getProduct, updateProduct, deleteProduct } from '@/lib/smartpos-api'
 import { syncProductsToMySQL } from '@/lib/sync-to-mysql'
-import { executeUpdate } from '@/lib/mysql-client'
+import { executeUpdate, executeQuery } from '@/lib/mysql-client'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
+    const numericId = parseInt(id)
+    
+    // Check if it's a local product (negative ID)
+    if (numericId < 0) {
+      const products = await executeQuery<any>('SELECT * FROM products WHERE id = ?', [numericId])
+      if (products.length > 0) {
+        const p = products[0]
+        const apiData = p.api_data ? JSON.parse(p.api_data) : {}
+        return NextResponse.json({
+          id: p.id,
+          alphaCode: p.alpha_code,
+          name: p.name,
+          sellValue: p.sell_value,
+          costValue: p.cost_value,
+          minimumStock: p.minimum_stock,
+          category: apiData.category,
+          pendingSync: true,
+        })
+      }
+      return NextResponse.json({ error: 'Produto não encontrado' }, { status: 404 })
+    }
+    
+    // Normal flow - get from SmartPOS
     const data = await getProduct(id)
     return NextResponse.json(data)
   } catch (error) {
@@ -17,10 +40,27 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
+    const numericId = parseInt(id)
     const body = await request.json()
     if (!body || typeof body !== 'object') {
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
     }
+    
+    // Check if it's a local product (negative ID)
+    if (numericId < 0) {
+      try {
+        await executeUpdate(
+          'UPDATE products SET alpha_code = ?, name = ?, sell_value = ?, cost_value = ?, minimum_stock = ?, api_data = ? WHERE id = ?',
+          [body.alphaCode, body.name, body.sellValue, body.costValue, body.minimumStock, JSON.stringify(body), numericId]
+        )
+        return NextResponse.json({ success: true, updated: true, local: true })
+      } catch (err) {
+        console.error('[API] Error updating local product:', err)
+        return NextResponse.json({ error: 'Erro ao atualizar produto local' }, { status: 500 })
+      }
+    }
+    
+    // Normal flow - update in SmartPOS
     const data = await updateProduct(id, body)
     
     // Sync para MySQL em background (não bloqueia a resposta)
