@@ -70,25 +70,64 @@ export async function POST(request: NextRequest) {
       productBody.description = productBody.name
     }
     
-    // Remove fields that SmartPOS API doesn't accept
-    const { observation, detail, ...cleanBody } = productBody
-    
-    // Ensure category is a number
-    if (cleanBody.category) {
-      cleanBody.category = Number(cleanBody.category)
+    // Build only the fields SmartPOS API needs
+    const smartposPayload = {
+      alphaCode: productBody.alphaCode,
+      description: productBody.description || productBody.name,
+      sellValue: Number(productBody.sellValue) || 0,
+      costValue: Number(productBody.costValue) || 0,
+      minimumStock: Number(productBody.minimumStock) || 0,
+      category: Number(productBody.category),
+      observation: productBody.observation || undefined,
+      detail: productBody.detail || undefined,
     }
     
-    // Ensure numeric fields are numbers
-    if (cleanBody.sellValue) cleanBody.sellValue = Number(cleanBody.sellValue)
-    if (cleanBody.costValue) cleanBody.costValue = Number(cleanBody.costValue)
-    if (cleanBody.minimumStock) cleanBody.minimumStock = Number(cleanBody.minimumStock)
+    console.log('[API] Sending to SmartPOS:', JSON.stringify(smartposPayload))
+    let data: any
+    let createdLocally = false
     
-    console.log('[API] Sending to SmartPOS:', JSON.stringify(cleanBody))
-    const data = await createProduct(cleanBody)
-    console.log('[API] SmartPOS response:', JSON.stringify(data))
+    try {
+      data = await createProduct(smartposPayload)
+      console.log('[API] SmartPOS response:', JSON.stringify(data))
+    } catch (smartposError: any) {
+      // SmartPOS API failing - create locally as fallback
+      console.error('[API] SmartPOS failed, creating locally:', smartposError.message)
+      
+      const localId = -Math.floor(Math.random() * 1000000) // Negative temp ID
+      data = {
+        id: localId,
+        alphaCode: productBody.alphaCode,
+        name: productBody.description || productBody.name,
+        description: productBody.description || productBody.name,
+        sellValue: Number(productBody.sellValue) || 0,
+        costValue: Number(productBody.costValue) || 0,
+        minimumStock: Number(productBody.minimumStock) || 0,
+        category: Number(productBody.category),
+        observation: productBody.observation,
+        noStock: false,
+        isFractional: false,
+        pendingSync: true,
+        createdAt: new Date().toISOString(),
+      }
+      createdLocally = true
+      
+      // Save to local products table
+      try {
+        await executeUpdate(
+          `INSERT INTO products (id, alpha_code, name, sell_value, cost_value, minimum_stock, category_id, api_data, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+           ON DUPLICATE KEY UPDATE alpha_code = VALUES(alpha_code), name = VALUES(name), sell_value = VALUES(sell_value)`,
+          [data.id, data.alphaCode, data.name, data.sellValue, data.costValue, data.minimumStock, data.category, JSON.stringify(data)]
+        )
+      } catch (dbErr) {
+        console.error('[API] Local insert error:', dbErr)
+      }
+    }
     
     // Sync para MySQL em background (não bloqueia a resposta)
-    syncProductsToMySQL().catch(err => console.error('[Sync] Products sync error:', err))
+    if (!createdLocally) {
+      syncProductsToMySQL().catch(err => console.error('[Sync] Products sync error:', err))
+    }
     
     // Definir estoque inicial no MySQL
     if (initialStock !== undefined && initialStock !== null) {

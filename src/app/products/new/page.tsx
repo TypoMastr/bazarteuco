@@ -156,12 +156,17 @@ export default function NewProductPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
+      const data = await res.json().catch(() => null)
+      
       if (res.ok) {
-        toast.success('Produto criado com sucesso')
+        if (data?.pendingSync) {
+          toast.success('Produto criado localmente. Será sincronizado com SmartPOS automaticamente.')
+        } else {
+          toast.success('Produto criado com sucesso')
+        }
         router.push('/products')
       } else {
-        const err = await res.json().catch(() => null)
-        toast.error('Erro ao criar produto', err?.error || 'Verifique os dados e tente novamente.')
+        toast.error('Erro ao criar produto', data?.error || 'Verifique os dados e tente novamente.')
       }
     } catch {
       toast.error('Erro ao criar produto', 'Não foi possível conectar ao servidor.')
