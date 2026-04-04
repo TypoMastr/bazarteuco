@@ -12,6 +12,7 @@ interface ProgressModalProps {
   open: boolean
   steps: Step[]
   currentStep: string
+  progress: number
   error: string | null
   onComplete: () => void
 }
@@ -23,11 +24,10 @@ const stepIcons: Record<string, typeof CloudUpload> = {
   uploadFTP: Upload,
 }
 
-export function ProgressModal({ open, steps, currentStep, error, onComplete }: ProgressModalProps) {
+export function ProgressModal({ open, steps, currentStep, progress, error, onComplete }: ProgressModalProps) {
   if (!open) return null
 
   const doneCount = steps.filter(s => s.status === 'done').length
-  const progress = Math.round((doneCount / steps.length) * 100)
   const allDone = doneCount === steps.length && !error
 
   return (

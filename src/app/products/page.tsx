@@ -30,6 +30,7 @@ export default function ProductsPage() {
   const [updatingSite, setUpdatingSite] = useState(false)
   const [updateSteps, setUpdateSteps] = useState<Array<{ id: string; label: string; icon: any; status: 'pending' | 'loading' | 'done' | 'error' }>>([])
   const [updateCurrentStep, setUpdateCurrentStep] = useState('')
+  const [updateProgress, setUpdateProgress] = useState(0)
   const [updateError, setUpdateError] = useState<string | null>(null)
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
   const toast = useToast()
@@ -64,26 +65,74 @@ export default function ProductsPage() {
       if (status === 'loading') setUpdateCurrentStep(id)
     }
 
+    function animateProgress(from: number, to: number, durationMs: number) {
+      return new Promise<void>((resolve) => {
+        const start = Date.now()
+        const tick = () => {
+          const elapsed = Date.now() - start
+          const progress = Math.min(elapsed / durationMs, 1)
+          setUpdateProgress(Math.round(from + (to - from) * progress))
+          if (progress < 1) requestAnimationFrame(tick)
+          else resolve()
+        }
+        requestAnimationFrame(tick)
+      })
+    }
+
     try {
       setStep('syncCategories', 'loading')
       await new Promise(r => setTimeout(r, 1000))
       setStep('syncCategories', 'done')
+      setUpdateProgress(25)
 
       setStep('syncProducts', 'loading')
       await new Promise(r => setTimeout(r, 1500))
       setStep('syncProducts', 'done')
+      setUpdateProgress(50)
 
       setStep('generateHTML', 'loading')
-      await new Promise(r => setTimeout(r, 1000))
 
-      const res = await fetch('/api/site/generate', { method: 'POST' })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Erro')
+      // Animate progress from 50% to 75% over 26 seconds, but finish early if fetch completes
+      const TOTAL_DURATION = 26000
+      const animPromise = animateProgress(50, 75, TOTAL_DURATION)
+
+      const fetchPromise = (async () => {
+        const res = await fetch('/api/site/generate', { method: 'POST' })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || 'Erro')
+        return data
+      })()
+
+      // Race: if fetch finishes before animation, jump to 75% immediately
+      const result = await Promise.race([
+        fetchPromise.then(data => ({ type: 'done', data } as const)),
+        animPromise.then(() => ({ type: 'animDone' } as const)),
+      ])
+
+      if (result.type === 'done') {
+        // Fetch finished before animation — jump to 75%
+        setUpdateProgress(75)
+      } else {
+        // Animation finished — wait for fetch
+        await fetchPromise
+      }
 
       setStep('generateHTML', 'done')
       setStep('uploadFTP', 'loading')
-      await new Promise(r => setTimeout(r, 1000))
+      setUpdateProgress(75)
+
+      // Animate upload progress from 75% to 95% over 3 seconds
+      const uploadAnimPromise = animateProgress(75, 95, 3000)
+      const uploadPromise = new Promise<void>(r => setTimeout(r, 1000))
+
+      await Promise.race([
+        uploadPromise.then(() => ({ type: 'done' } as const)),
+        uploadAnimPromise.then(() => ({ type: 'animDone' } as const)),
+      ])
+
+      setUpdateProgress(95)
       setStep('uploadFTP', 'done')
+      setUpdateProgress(100)
 
       await refetch()
     } catch (err: any) {
@@ -339,6 +388,7 @@ export default function ProductsPage() {
         open={updatingSite}
         steps={updateSteps}
         currentStep={updateCurrentStep}
+        progress={updateProgress}
         error={updateError}
         onComplete={handleUpdateSiteComplete}
       />
