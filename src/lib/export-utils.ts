@@ -217,24 +217,85 @@ function exportStockPDF(doc: jsPDF, stock: StockData[]): void {
   })
 }
 
-function exportSalesPDF(doc: jsPDF, sales: SaleData[]): void {
+function exportSalesPDF(doc: jsPDF, data: any): void {
+  const sales: SaleData[] = data.sales || data
+  const saleItemsMap: Record<string, any[]> = data.saleItems || {}
   const total = sales.reduce((sum, s) => sum + (s.totalAmount || 0), 0)
-  
-  doc.setFontSize(12)
-  doc.text(`Total de vendas: ${sales.length} | Receita: ${formatCurrency(total)}`, 14, 38)
 
-  const tableData = sales.map(s => [
-    s.orderName || s.uniqueIdentifier || s.id,
-    s.creationDate ? formatDateBR(s.creationDate) : '-',
-    formatCurrency(s.totalAmount || 0)
-  ])
+  doc.setFontSize(16)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(34, 139, 34)
+  doc.text('Vendas do Dia', 14, 16)
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(100, 100, 100)
+  doc.text(`Vendas: ${sales.length}  |  Receita: ${formatCurrency(total)}`, 14, 24)
 
-  autoTable(doc, {
-    head: [['Venda', 'Data', 'Valor']],
-    body: tableData,
-    startY: 45,
-    styles: { fontSize: 8 },
-    headStyles: { fillColor: [34, 139, 34] }
+  let startY = 32
+
+  sales.forEach((sale) => {
+    const uid = sale.uniqueIdentifier || sale.id
+    const saleLabel = sale.orderName || (sale.uniqueIdentifier ? `#${sale.uniqueIdentifier}` : `#${uid.slice(-6)}`)
+    const { date: saleDate, time: saleTime } = formatDateTimeBR(sale.creationDate)
+
+    if (startY > 250) {
+      doc.addPage()
+      startY = 15
+    }
+
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(34, 139, 34)
+    doc.text(`Venda ${saleLabel}`, 14, startY)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(120, 120, 120)
+    doc.text(`${saleDate}  •  ${saleTime}`, 75, startY)
+    startY += 2
+
+    const items = saleItemsMap[uid] || sale.items || []
+    if (items.length > 0) {
+      const tableData = items.map((item: any) => [
+        item.product?.name || item.productName || 'Valor Avulso',
+        (item.quantity || 1).toString(),
+        formatCurrency(item.unitPrice || item.listPrice || item.usedPrice || 0),
+        formatCurrency(item.netItem || item.total || 0),
+      ])
+
+      autoTable(doc, {
+        head: [['Produto', 'Qtd', 'Unitario', 'Total']],
+        body: tableData,
+        startY,
+        styles: { fontSize: 7, cellPadding: 1.5 },
+        headStyles: {
+          fillColor: [34, 139, 34],
+          textColor: 255,
+          fontStyle: 'bold',
+          fontSize: 7,
+        },
+        columnStyles: {
+          0: { cellWidth: 80 },
+          1: { cellWidth: 15, halign: 'center' },
+          2: { cellWidth: 30, halign: 'right' },
+          3: { cellWidth: 30, halign: 'right' },
+        },
+        margin: { left: 14, right: 14 },
+        theme: 'grid',
+      })
+
+      startY = (doc as any).lastAutoTable.finalY + 2
+    }
+
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(34, 139, 34)
+    doc.text(`Total: ${formatCurrency(sale.totalAmount || 0)}`, 14, startY)
+    startY += 4
+
+    doc.setDrawColor(220, 220, 220)
+    doc.setLineWidth(0.2)
+    doc.line(14, startY, 196, startY)
+    startY += 4
   })
 }
 
@@ -459,10 +520,41 @@ function generateWhatsAppMessage(
       break
     }
     case 'sales': {
-      const sales = data as SaleData[]
+      const salesData = data as any
+      const sales: SaleData[] = salesData.sales || data
+      const saleItemsMap: Record<string, any[]> = salesData.saleItems || {}
       const total = sales.reduce((sum, s) => sum + (s.totalAmount || 0), 0)
-      lines.push(`Receita: ${formatCurrency(total)}`)
-      lines.push(`Vendas: ${sales.length}`)
+
+      lines.push(`*Vendas do Dia*`)
+      lines.push('')
+      lines.push(`💰 *Resumo*`)
+      lines.push(`Total: ${sales.length} vendas | ${formatCurrency(total)}`)
+      lines.push('')
+
+      sales.forEach((sale) => {
+        const uid = sale.uniqueIdentifier || sale.id
+        const saleLabel = sale.orderName || (sale.uniqueIdentifier ? `#${sale.uniqueIdentifier}` : `#${uid.slice(-6)}`)
+        const { date: saleDate, time: saleTime } = formatDateTimeBR(sale.creationDate)
+
+        lines.push('━━━━━━━━━━━━━━━━━━')
+        lines.push('')
+        lines.push(`🧾 *Venda ${saleLabel}* • ${saleDate} • ${saleTime}`)
+
+        const items = saleItemsMap[uid] || sale.items || []
+        if (items.length > 0) {
+          items.forEach((item: any) => {
+            const itemName = item.product?.name || item.productName || 'Valor Avulso'
+            const qty = item.quantity || 1
+            const itemTotal = formatCurrency(item.netItem || item.total || 0)
+            if (qty > 1) {
+              lines.push(`• ${itemName} (${qty}x) - ${itemTotal}`)
+            } else {
+              lines.push(`• ${itemName} - ${itemTotal}`)
+            }
+          })
+        }
+        lines.push(`*Total: ${formatCurrency(sale.totalAmount || 0)}*`)
+      })
       break
     }
     case 'report': {
