@@ -61,7 +61,7 @@ export interface ReportData {
   reportType?: 'daily' | 'monthly' | 'annual'
 }
 
-const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
+const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 
 function formatCurrency(value: number): string {
