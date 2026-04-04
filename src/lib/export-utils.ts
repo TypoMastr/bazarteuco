@@ -222,11 +222,23 @@ function exportSalesPDF(doc: jsPDF, data: any): void {
   const sales: SaleData[] = data.sales || data
   const saleItemsMap: Record<string, any[]> = data.saleItems || {}
   const total = sales.reduce((sum, s) => sum + (s.totalAmount || 0), 0)
+  const dateRange = data.dateRange || null
 
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(100, 100, 100)
-  doc.text(`Vendas: ${sales.length}  |  Receita: ${formatCurrency(total)}`, 14, 16)
+  const pageWidth = doc.internal.pageSize.getWidth()
+
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(34, 139, 34)
+
+  let headerText = 'Bazar TEUCO'
+  if (dateRange && dateRange.start && dateRange.end) {
+    headerText += ` - ${formatDateBR(dateRange.start)} ate ${formatDateBR(dateRange.end)}`
+  }
+  headerText += ` | Vendas: ${sales.length} | Receita: ${formatCurrency(total)}`
+
+  const textWidth = doc.getTextWidth(headerText)
+  const xPos = (pageWidth - textWidth) / 2
+  doc.text(headerText, xPos, 16)
 
   let startY = 24
 

@@ -314,7 +314,7 @@ export default function SalesPage() {
               <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? 'Sync' : 'Atualizar'}
             </Button>
-            <ExportModal type="sales" data={sales} saleItems={saleItems} />
+            <ExportModal type="sales" data={sales} saleItems={saleItems} dateRange={{ start: startDate, end: endDate }} />
           </>
         }
       />
