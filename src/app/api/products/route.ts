@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
       }).catch(() => {})
     }
     
-    // Definir estoque inicial no MySQL
+    // Definir estoque inicial no MySQL e sincronizar com SmartPOS
     if (initialStock !== undefined && initialStock !== null) {
       try {
         await executeUpdate(
@@ -203,6 +203,22 @@ export async function POST(request: NextRequest) {
            ON DUPLICATE KEY UPDATE quantity = ?`,
           [data.id, initialStock, initialStock]
         )
+        
+        // Sync to SmartPOS immediately
+        fetch(`https://api.smartpos.app/v1/products/stock/${data.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Api-Key-Id': process.env.SMARTPOS_API_KEY_ID!,
+            'X-Api-Key-Secret': process.env.SMARTPOS_API_KEY_SECRET!,
+          },
+          body: JSON.stringify({
+            productId: data.id,
+            productVariantId: null,
+            quantity: initialStock,
+            stockOperation: 'SET',
+          }),
+        }).catch(err => console.error('[API] Error syncing stock to SmartPOS:', err))
       } catch (err) {
         console.error('[API] Error setting initial stock:', err)
       }

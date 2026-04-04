@@ -1,5 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { initDatabase, getStockSummary, getStockStatus, updateStock, updateStockBatch } from '@/lib/hybrid-stock'
+import { executeUpdate } from '@/lib/mysql-client'
+
+async function syncStockToSmartPOS(productId: number, quantity: number) {
+  try {
+    await executeUpdate(
+      `INSERT INTO stock_history (product_id, quantity, operation, notes, created_at)
+       VALUES (?, ?, 'SYNC', 'Sincronizado após atualização', NOW())`,
+      [productId, quantity]
+    )
+    // Try to update in SmartPOS (fire and forget)
+    fetch(`https://api.smartpos.app/v1/products/stock/${productId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Api-Key-Id': process.env.SMARTPOS_API_KEY_ID!,
+        'X-Api-Key-Secret': process.env.SMARTPOS_API_KEY_SECRET!,
+      },
+      body: JSON.stringify({
+        productId: productId,
+        productVariantId: null,
+        quantity: quantity,
+        stockOperation: 'SET',
+      }),
+    }).catch(() => {})
+  } catch {}
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,11 +53,17 @@ export async function PUT(request: NextRequest) {
     
     if (body.updates && Array.isArray(body.updates)) {
       const result = await updateStockBatch(body.updates)
+      // Sync each updated product to SmartPOS
+      for (const update of body.updates) {
+        syncStockToSmartPOS(update.productId, update.quantity)
+      }
       return NextResponse.json(result)
     }
     
     if (body.productId && body.quantity !== undefined) {
       const success = await updateStock(body.productId, body.quantity)
+      // Sync to SmartPOS immediately
+      syncStockToSmartPOS(body.productId, body.quantity)
       return NextResponse.json({ success, productId: body.productId, quantity: body.quantity })
     }
     
