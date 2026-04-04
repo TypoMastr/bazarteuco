@@ -49,15 +49,15 @@ export default function LoginPage() {
         return
       }
 
-      const credential = await authenticateCredential(data.credentialIds)
+      const assertion = await authenticateCredential(data.credentialIds)
 
-      const verifyRes = await fetch('/api/auth/webauthn/verify', {
+      const authRes = await fetch('/api/auth/webauthn/authenticate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credential),
+        body: JSON.stringify(assertion),
       })
 
-      if (verifyRes.ok) {
+      if (authRes.ok) {
         window.location.href = '/sales'
       }
     } catch {

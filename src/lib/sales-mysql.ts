@@ -181,7 +181,7 @@ export async function getDailyReport(date: string) {
   const endISO = `${date}T23:59:59Z`
 
   const sales = await executeQuery<any>(`
-    SELECT sale_id, sale_number, unique_identifier, creation_date, total_amount, discount_amount
+    SELECT sale_id, unique_identifier, creation_date, total_amount, discount_amount
     FROM sales_cache
     WHERE creation_date >= ? AND creation_date <= ?
     AND is_canceled = FALSE
@@ -237,7 +237,7 @@ export async function getDailyReport(date: string) {
       }))
 
     return {
-      saleNumber: sale.sale_number || index + 1,
+      saleNumber: index + 1,
       saleId: sale.sale_id,
       uniqueIdentifier: sale.unique_identifier,
       creationDate: sale.creation_date ? sale.creation_date.toISOString() : '',
