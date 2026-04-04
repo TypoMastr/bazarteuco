@@ -589,7 +589,7 @@ function generateWhatsAppMessage(
 
         lines.push('━━━━━━━━━━━━━━━━━━')
         lines.push('')
-        lines.push(`🧾 *Venda ${saleLabel}* • ${saleDate} • ${saleTime}`)
+          lines.push(`VENDA ${saleLabel} • ${saleDate} • ${saleTime}`)
 
         const items = saleItemsMap[uid] || sale.items || []
         if (items.length > 0) {
@@ -616,12 +616,12 @@ function generateWhatsAppMessage(
       lines.push(`*Relatório de Vendas*`)
       lines.push(`*${dateLabel}*`)
       lines.push('')
-      lines.push(`💰 *Resumo*`)
+      lines.push(`*RESUMO*`)
       lines.push(`Total: ${summary.totalSales} vendas | ${formatCurrency(summary.totalRevenue)}`)
-      if (summary.bazarRevenue) lines.push(`🛒 Bazar: ${formatCurrency(summary.bazarRevenue)}`)
-      if (summary.rifaRevenue) lines.push(`🎫 Rifa: ${formatCurrency(summary.rifaRevenue)}`)
-      if (summary.avulsoRevenue) lines.push(`📦 Avulsos: ${formatCurrency(summary.avulsoRevenue)}`)
-      if (summary.doacaoRevenue) lines.push(`💝 Doações: ${formatCurrency(summary.doacaoRevenue)}`)
+      if (summary.bazarRevenue) lines.push(`Bazar: ${formatCurrency(summary.bazarRevenue)}`)
+      if (summary.rifaRevenue) lines.push(`Rifa: ${formatCurrency(summary.rifaRevenue)}`)
+      if (summary.avulsoRevenue) lines.push(`Avulsos: ${formatCurrency(summary.avulsoRevenue)}`)
+      if (summary.doacaoRevenue) lines.push(`Doações: ${formatCurrency(summary.doacaoRevenue)}`)
       lines.push('')
 
       const sales = report.sales || []
@@ -632,7 +632,7 @@ function generateWhatsAppMessage(
           const saleLabel = sale.uniqueIdentifier ? `#${sale.uniqueIdentifier}` : `#${sale.saleNumber}`
 
           lines.push('')
-          lines.push(`🧾 *Venda ${saleLabel}* • ${saleDate} • ${saleTime}`)
+        lines.push(`VENDA ${saleLabel} • ${saleDate} • ${saleTime}`)
           sale.items.forEach(item => {
             const itemTotal = formatCurrency(item.total)
             if (item.quantity > 1) {
@@ -650,7 +650,7 @@ function generateWhatsAppMessage(
         const totalQty = sorted.reduce((sum, p) => sum + p.quantity, 0)
 
         lines.push('')
-        lines.push(`📦 *Todos os Produtos Vendidos* (${sorted.length} itens | ${totalQty} unidades)`)
+        lines.push(`*TODOS OS PRODUTOS VENDIDOS* (${sorted.length} itens | ${totalQty} unidades)`)
         lines.push('')
         sorted.forEach(p => {
           lines.push(`• ${p.name} (${p.quantity}x) - ${formatCurrency(p.total)}`)
@@ -661,7 +661,7 @@ function generateWhatsAppMessage(
         const totalQty = sorted.reduce((sum, p) => sum + p.quantity, 0)
 
         lines.push('')
-        lines.push(`📦 *Todos os Produtos Vendidos* (${sorted.length} itens | ${totalQty} unidades)`)
+        lines.push(`*TODOS OS PRODUTOS VENDIDOS* (${sorted.length} itens | ${totalQty} unidades)`)
         lines.push('')
         sorted.forEach(p => {
           lines.push(`• ${p.name} (${p.quantity}x) - ${formatCurrency(p.total)}`)
