@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 
 const CATCHUP_STORAGE_KEY = 'bazar_last_catchup'
-const CATCHUP_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
+const CATCHUP_INTERVAL_MS = 24 * 60 * 60 * 1000 // 24 hours
 
 interface UseSalesStreamOptions {
   enabled?: boolean
@@ -13,10 +13,10 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
   const [status, setStatus] = useState<'connected' | 'reconnecting' | 'offline'>('reconnecting')
   const [lastSyncDate, setLastSyncDate] = useState<string | null>(null)
   const [isCatchingUp, setIsCatchingUp] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
   const [catchUpProgress, setCatchUpProgress] = useState(0)
   const [catchUpMessage, setCatchUpMessage] = useState('')
   const [hasSalesToday, setHasSalesToday] = useState(false)
-  const [catchUpDone, setCatchUpDone] = useState(false)
   const knownSaleIds = useRef<Set<string>>(new Set())
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const isSyncingRef = useRef(false)
@@ -56,6 +56,7 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
   const syncSales = useCallback(async (isCatchUp = false) => {
     if (isSyncingRef.current) return
     isSyncingRef.current = true
+    setIsSyncing(true)
 
     try {
       if (isCatchUp) {
@@ -90,7 +91,6 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
         setCatchUpProgress(100)
         setCatchUpMessage('Dados atualizados!')
         markCatchUpDone()
-        setCatchUpDone(true)
       }
 
       if (data.lastSyncDate) {
@@ -105,6 +105,10 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
       }
     } finally {
       isSyncingRef.current = false
+      setIsSyncing(false)
+      if (isCatchUp) {
+        setIsCatchingUp(false)
+      }
     }
   }, [lastSyncDate, markCatchUpDone])
 
@@ -133,24 +137,22 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
     }
   }, [lastSyncDate, onNewSale, playNotificationSound, hasSalesToday])
 
-  // Initial sync — only show modal if needed
+  // Initial sync — modal once per day, silent otherwise
   useEffect(() => {
     if (!enabled) return
 
     if (needsCatchUp()) {
       syncSales(true)
     } else {
-      // Skip modal, just do a silent sync
-      setCatchUpDone(true)
       syncSales(false).then(() => {
         checkNewSales()
       })
     }
   }, [enabled, syncSales, needsCatchUp, checkNewSales])
 
-  // Polling only AFTER catch-up is done
+  // Polling after initial sync
   useEffect(() => {
-    if (!enabled || !catchUpDone || !hasSalesToday) return
+    if (!enabled || isSyncing || !hasSalesToday) return
 
     const runCycle = () => {
       syncSales(false).then(() => {
@@ -163,22 +165,17 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [enabled, catchUpDone, hasSalesToday, syncSales, checkNewSales])
+  }, [enabled, isSyncing, hasSalesToday, syncSales, checkNewSales])
 
   return {
     status,
     isCatchingUp,
+    isSyncing,
     catchUpProgress,
     catchUpMessage,
     lastSyncDate,
     hasSalesToday,
-    dismissCatchUp: () => {
-      markCatchUpDone()
-      setCatchUpDone(true)
-      setIsCatchingUp(false)
-    },
     triggerSync: () => {
-      setCatchUpDone(false)
       syncSales(true)
     },
   }
