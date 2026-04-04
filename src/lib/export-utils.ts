@@ -501,6 +501,17 @@ function generateWhatsAppMessage(
           lines.push(`*Total: ${formatCurrency(sale.totalAmount)}*`)
           lines.push('━━━━━━━━━━━━━━━━━━')
         })
+
+        const products = report.products || []
+        const sorted = [...products].sort((a, b) => b.quantity - a.quantity)
+        const totalQty = sorted.reduce((sum, p) => sum + p.quantity, 0)
+
+        lines.push('')
+        lines.push(`📦 *Todos os Produtos Vendidos* (${sorted.length} itens | ${totalQty} unidades)`)
+        lines.push('')
+        sorted.forEach(p => {
+          lines.push(`• ${p.name} (${p.quantity}x) - ${formatCurrency(p.total)}`)
+        })
       } else {
         const products = report.products || report.topProducts || []
         const sorted = [...products].sort((a, b) => b.quantity - a.quantity)
