@@ -232,8 +232,7 @@ function exportSalesPDF(doc: jsPDF, data: any): void {
 
   sales.forEach((sale) => {
     const uid = sale.uniqueIdentifier || sale.id
-    const saleNum = sale.saleNumber || sale.orderName || sale.id
-    const saleLabel = typeof saleNum === 'number' ? `#${saleNum}` : `#${saleNum}`
+    const saleLabel = sale.id && /^\d+$/.test(sale.id) ? `#${sale.id}` : (sale.orderName || `#${uid.slice(-6)}`)
     const { date: saleDate, time: saleTime } = formatDateTimeBR(sale.creationDate)
 
     const items = saleItemsMap[uid] || sale.items || []
