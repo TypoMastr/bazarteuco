@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { formatCurrency, cn } from '@/lib/utils'
-import { Search, Plus, AlertCircle, Package, Edit2, Archive, Trash2, X, Barcode, Check, FolderOpen, ArrowDownAZ, Hash, PackageCheck, RefreshCw, ChevronDown, ChevronRight} from 'lucide-react'
+import { Search, Plus, AlertCircle, Package, Edit2, Archive, Trash2, X, Barcode, Check, FolderOpen, ArrowDownAZ, Hash, PackageCheck, RefreshCw, ChevronDown, ChevronRight, CloudUpload} from 'lucide-react'
 import Link from 'next/link'
 import { useState, useMemo } from 'react'
 import { useToast } from '@/components/ui/toast'
@@ -29,6 +29,7 @@ export default function ProductsPage() {
   const [mutating, setMutating] = useState<number | null>(null)
   const [deletingMultiple, setDeletingMultiple] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  const [updatingSite, setUpdatingSite] = useState(false)
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
   const toast = useToast()
 
@@ -41,6 +42,20 @@ export default function ProductsPage() {
       toast.error('Erro ao sincronizar')
     } finally {
       setSyncing(false)
+    }
+  }
+
+  async function handleUpdateSite() {
+    setUpdatingSite(true)
+    try {
+      const res = await fetch('/api/site/generate', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Erro')
+      toast.success('Site atualizado com sucesso!')
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao atualizar site')
+    } finally {
+      setUpdatingSite(false)
     }
   }
 
@@ -228,6 +243,10 @@ export default function ProductsPage() {
             <Button variant="outline" onClick={handleSync} disabled={syncing} className="h-9 px-4 text-xs">
               <RefreshCw className={cn("h-4 w-4 mr-1", syncing && "animate-spin")} />
               {syncing ? 'Sincronizando' : 'Sincronizar'}
+            </Button>
+            <Button variant="outline" onClick={handleUpdateSite} disabled={updatingSite} className="h-9 px-4 text-xs">
+              <CloudUpload className={cn("h-4 w-4 mr-1", updatingSite && "animate-spin")} />
+              {updatingSite ? 'Atualizando...' : 'Atualizar Site'}
             </Button>
             <Link href="/products/new">
               <Button className="h-9 px-4 text-xs">
