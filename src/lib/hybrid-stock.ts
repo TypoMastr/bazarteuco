@@ -159,12 +159,18 @@ export async function syncProductsFromAPI(): Promise<{ synced: number; failed: n
             ]
           )
 
-          await executeUpdate(
-            `INSERT INTO stock (product_id, quantity)
-             VALUES (?, 0)
-             ON DUPLICATE KEY UPDATE product_id = product_id`,
-            [product.id]
-          )
+          const productName = (product.name || '').toLowerCase()
+          const isRifa = productName.includes('rifa')
+          const isDoacao = productName.includes('doacao') || productName.includes('doação')
+
+          if (!isRifa && !isDoacao) {
+            await executeUpdate(
+              `INSERT INTO stock (product_id, quantity)
+               VALUES (?, 0)
+               ON DUPLICATE KEY UPDATE product_id = product_id`,
+              [product.id]
+            )
+          }
 
           synced++
         } catch (err) {
@@ -204,6 +210,9 @@ export async function getStockStatus(): Promise<StockStatus[]> {
       p.category_name as categoryName
     FROM products p
     LEFT JOIN stock s ON p.id = s.product_id
+    WHERE LOWER(p.name) NOT LIKE '%rifa%'
+      AND LOWER(p.name) NOT LIKE '%doacao%'
+      AND LOWER(p.name) NOT LIKE '%doação%'
     ORDER BY p.name ASC
   `)
 
@@ -234,6 +243,9 @@ export async function getStockSummary(): Promise<{ zerado: number; baixo: number
       COUNT(*) as total
     FROM products p
     LEFT JOIN stock s ON p.id = s.product_id
+    WHERE LOWER(p.name) NOT LIKE '%rifa%'
+      AND LOWER(p.name) NOT LIKE '%doacao%'
+      AND LOWER(p.name) NOT LIKE '%doação%'
   `)
 
   const r = result[0] || { zerado: 0, baixo: 0, ok: 0, total: 0 }
