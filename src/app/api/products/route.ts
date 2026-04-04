@@ -63,7 +63,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
     }
     
-    const { initialStock, ...productBody } = body
+    const { initialStock, category, ...productBody } = body
+    
+    // Build category object for SmartPOS API
+    let categoryObj: any = null
+    if (category) {
+      // Fetch category details from SmartPOS
+      const catsRes = await fetch(`https://api.smartpos.app/v1/categories?page=1&size=100`, {
+        headers: {
+          'X-Api-Key-Id': process.env.SMARTPOS_API_KEY_ID!,
+          'X-Api-Key-Secret': process.env.SMARTPOS_API_KEY_SECRET!,
+        },
+      })
+      if (catsRes.ok) {
+        const catsData = await catsRes.json()
+        const cats = catsData.items || catsData.data || catsData || []
+        const found = cats.find((c: any) => c.id === category)
+        if (found) {
+          categoryObj = {
+            id: found.id,
+            name: found.name,
+            viewMode: found.viewMode || 'TEXT',
+            text: found.text || '',
+            showCatalog: found.showCatalog || false,
+          }
+        }
+      }
+    }
+    
+    if (!categoryObj) {
+      return NextResponse.json({ error: 'Categoria não encontrada' }, { status: 400 })
+    }
+    
+    productBody.category = categoryObj
+    
     const data = await createProduct(productBody)
     
     // Sync para MySQL em background (não bloqueia a resposta)
