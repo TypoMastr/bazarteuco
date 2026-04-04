@@ -48,10 +48,18 @@ export async function generateSiteHtml(): Promise<string> {
     'SELECT id, name, show_catalog, oculto FROM categories ORDER BY name'
   )
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Get synced products (positive IDs)
   const products: any[] = await executeQuery(
-    'SELECT alpha_code, name, sell_value, category_id, category_name FROM products ORDER BY category_id, name'
+    'SELECT alpha_code, name, sell_value, category_id, category_name FROM products WHERE id > 0 ORDER BY category_id, name'
   )
+  
+  // Get pending local products (negative IDs)
+  const pendingProducts: any[] = await executeQuery(
+    'SELECT alpha_code, name, sell_value, category_id, category_name FROM products WHERE id < 0 ORDER BY category_id, name'
+  )
+  
+  // Combine both
+  const allProducts = [...products, ...pendingProducts]
 
   const visibleCategories = categories.filter(c => !c.oculto)
 
@@ -59,7 +67,7 @@ export async function generateSiteHtml(): Promise<string> {
   visibleCategories.forEach(c => catNameMap.set(c.name.toLowerCase(), c.id))
 
   const catalogo = visibleCategories.map(cat => {
-    const catProducts = products.filter(p => {
+    const catProducts = allProducts.filter(p => {
       if (!p.name) return false
       if (p.category_id === cat.id) return true
       if (p.category_name && p.category_name.toLowerCase() === cat.name.toLowerCase()) return true

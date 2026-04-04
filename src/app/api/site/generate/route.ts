@@ -121,6 +121,16 @@ async function syncAll() {
 
 export async function POST() {
   try {
+    // First, try to sync any pending local products to SmartPOS
+    try {
+      const { syncPendingProducts } = await import('@/lib/sync-to-mysql')
+      const pendingResult = await syncPendingProducts()
+      console.log(`[Site] Pending sync: ${pendingResult.success} success, ${pendingResult.failed} failed`)
+    } catch (err) {
+      console.log('[Site] Pending sync skipped or failed:', err)
+    }
+    
+    // Then sync from SmartPOS to MySQL
     const syncResult = await syncAll()
     console.log(`[Site] Synced ${syncResult.categories} categories, ${syncResult.products} products`)
 
