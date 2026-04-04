@@ -13,10 +13,11 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
   const [catchUpProgress, setCatchUpProgress] = useState(0)
   const [catchUpMessage, setCatchUpMessage] = useState('')
   const [hasSalesToday, setHasSalesToday] = useState(false)
+  const [catchUpDone, setCatchUpDone] = useState(false)
   const knownSaleIds = useRef<Set<string>>(new Set())
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const backoffRef = useRef(5000)
   const isSyncingRef = useRef(false)
+  const catchUpDoneRef = useRef(false)
 
   const playNotificationSound = useCallback(() => {
     try {
@@ -41,8 +42,8 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
     try {
       if (isCatchUp) {
         setIsCatchingUp(true)
-        setCatchUpMessage('Buscando vendas do sistema...')
         setCatchUpProgress(10)
+        setCatchUpMessage('Buscando vendas do sistema...')
       }
 
       const body: any = {}
@@ -58,7 +59,6 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
 
       const data = await res.json()
 
-      // Only start polling if there are sales today
       if (data.synced > 0 || data.lastSyncDate) {
         setHasSalesToday(true)
       }
@@ -66,22 +66,22 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
       if (isCatchUp) {
         setCatchUpProgress(70)
         setCatchUpMessage(data.synced > 0 ? `Encontradas ${data.synced} venda(s) nova(s)...` : 'Nenhuma venda pendente.')
+
+        await new Promise(r => setTimeout(r, 400))
+
+        setCatchUpProgress(100)
+        setCatchUpMessage('Dados atualizados!')
+        catchUpDoneRef.current = true
+        setCatchUpDone(true)
       }
 
       if (data.lastSyncDate) {
         setLastSyncDate(data.lastSyncDate)
       }
 
-      if (isCatchUp) {
-        setCatchUpProgress(100)
-        setCatchUpMessage('Dados atualizados!')
-      }
-
       setStatus('connected')
-      backoffRef.current = 5000
     } catch {
       setStatus('reconnecting')
-      backoffRef.current = Math.min(backoffRef.current * 2, 30000)
       if (isCatchUp) {
         setCatchUpMessage('Erro ao sincronizar. Tentando novamente...')
       }
@@ -110,22 +110,20 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
       }
 
       setStatus('connected')
-      backoffRef.current = 5000
     } catch {
       setStatus('reconnecting')
-      backoffRef.current = Math.min(backoffRef.current * 2, 30000)
     }
   }, [lastSyncDate, onNewSale, playNotificationSound, hasSalesToday])
 
-  // Initial catch-up
+  // Initial catch-up only
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled || catchUpDoneRef.current) return
     syncSales(true)
   }, [enabled, syncSales])
 
-  // Polling after catch-up — ONLY if there are sales today
+  // Polling only AFTER catch-up is done
   useEffect(() => {
-    if (!enabled || isCatchingUp || !hasSalesToday) return
+    if (!enabled || !catchUpDone || !hasSalesToday) return
 
     const runCycle = () => {
       syncSales(false).then(() => {
@@ -133,17 +131,12 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
       })
     }
 
-    const startPolling = () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-      intervalRef.current = setInterval(runCycle, backoffRef.current)
-    }
-
-    startPolling()
+    intervalRef.current = setInterval(runCycle, 5000)
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [enabled, isCatchingUp, hasSalesToday, syncSales, checkNewSales])
+  }, [enabled, catchUpDone, hasSalesToday, syncSales, checkNewSales])
 
   return {
     status,
@@ -152,6 +145,10 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
     catchUpMessage,
     lastSyncDate,
     hasSalesToday,
-    triggerSync: () => syncSales(true),
+    triggerSync: () => {
+      catchUpDoneRef.current = false
+      setCatchUpDone(false)
+      syncSales(true)
+    },
   }
 }
