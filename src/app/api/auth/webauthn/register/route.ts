@@ -3,23 +3,23 @@ import { createCredential, hasCredentials } from '@/lib/webauthn-mysql'
 import crypto from 'crypto'
 
 const VALID_PASSWORD = process.env.AUTH_PASSWORD || ''
-const SECRET = process.env.SESSION_SECRET || 'default-insecure-secret-change-me'
+const SECRET = process.env.SESSION_SECRET
+if (!SECRET) {
+  throw new Error('SESSION_SECRET environment variable is required')
+}
 
 async function sign(payload: string): Promise<string> {
-  return new Promise((resolve) => {
-    const encoder = new TextEncoder()
-    crypto.subtle.importKey(
-      'raw',
-      encoder.encode(SECRET),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign']
-    ).then(async (key) => {
-      const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(payload))
-      const hex = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('')
-      resolve(payload + '.' + hex)
-    })
-  })
+  const encoder = new TextEncoder()
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(SECRET),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(payload))
+  const hex = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('')
+  return payload + '.' + hex
 }
 
 export async function POST(request: NextRequest) {
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Senha incorreta' }, { status: 401 })
     }
 
-    if (!publicKey || !credentialId) {
+    if (!publicKey || !credentialId || typeof publicKey !== 'string' || typeof credentialId !== 'string') {
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
     }
 
