@@ -345,6 +345,18 @@
 
         renderCatalog();
     });
+
+    // Force cache bust on every load
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            registrations.forEach(function(reg) { reg.unregister(); });
+        });
+    }
+    if ('caches' in window) {
+        caches.keys().then(function(names) {
+            names.forEach(function(name) { caches.delete(name); });
+        });
+    }
     </script>
 
 </body>

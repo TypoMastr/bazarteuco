@@ -1,5 +1,5 @@
 'use client'
-import { Check, Loader2, AlertCircle, CloudUpload, Database, FileText, Upload } from 'lucide-react'
+import { Check, Loader2, AlertCircle, CloudUpload, Database, FileText, Upload, ExternalLink } from 'lucide-react'
 
 interface Step {
   id: string
@@ -112,14 +112,25 @@ export function ProgressModal({ open, steps, currentStep, error, onComplete }: P
             </div>
           )}
 
-          {/* OK Button - shown when all steps are done */}
+          {/* OK + Ver Site Buttons - shown when all steps are done */}
           {allDone && (
-            <button
-              onClick={onComplete}
-              className="w-full h-14 rounded-xl bg-[var(--teuco-green)] text-white font-black text-sm uppercase tracking-[3px] hover:bg-[var(--teuco-green)]/90 transition-colors shadow-lg shadow-[var(--teuco-green)]/30"
-            >
-              OK
-            </button>
+            <div className="space-y-3">
+              <a
+                href="https://www.teuco.com.br/bazar/index.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full h-14 rounded-xl bg-white text-[var(--teuco-green)] font-black text-sm uppercase tracking-[3px] border-2 border-[var(--teuco-green)] hover:bg-[var(--teuco-green)]/5 transition-colors"
+              >
+                <ExternalLink className="h-5 w-5" />
+                Ver Site
+              </a>
+              <button
+                onClick={onComplete}
+                className="w-full h-14 rounded-xl bg-[var(--teuco-green)] text-white font-black text-sm uppercase tracking-[3px] hover:bg-[var(--teuco-green)]/90 transition-colors shadow-lg shadow-[var(--teuco-green)]/30"
+              >
+                OK
+              </button>
+            </div>
           )}
 
           {/* Close on error */}
