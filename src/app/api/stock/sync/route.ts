@@ -51,7 +51,7 @@ export async function POST() {
     
     let totalSynced = 0
     let page = 1
-    const pageSize = 200
+    const pageSize = 100
     
     try {
       await conn.beginTransaction()
