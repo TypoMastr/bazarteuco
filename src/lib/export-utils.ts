@@ -282,8 +282,7 @@ function exportSalesPDF(doc: jsPDF, data: any): void {
         const itemLabel = qty > 1 ? `${itemName} (${qty}x)` : itemName
         const itemValue = formatCurrency(item.netItem || item.total || 0)
 
-        const bgFill = idx % 2 === 0 ? [250, 250, 250] : [255, 255, 255]
-        doc.setFillColor(bgFill[0], bgFill[1], bgFill[2])
+        doc.setFillColor(248, 248, 248)
         doc.rect(10, startY, 190, 7, 'F')
 
         doc.setFont('helvetica', 'normal')
