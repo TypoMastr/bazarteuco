@@ -292,6 +292,33 @@ export async function updateStock(productId: number, newQuantity: number): Promi
   }
 }
 
+export async function updateMinStock(productId: number, newMinStock: number): Promise<boolean> {
+  try {
+    await executeUpdate(
+      `UPDATE products SET minimum_stock = ? WHERE id = ?`,
+      [newMinStock, productId]
+    )
+
+    return true
+  } catch (err) {
+    console.error('Erro ao atualizar estoque mínimo:', err)
+    return false
+  }
+}
+
+export async function updateMinStockBatch(updates: { productId: number; minStock: number }[]): Promise<{ success: number; failed: number }> {
+  let success = 0
+  let failed = 0
+
+  for (const update of updates) {
+    const result = await updateMinStock(update.productId, update.minStock)
+    if (result) success++
+    else failed++
+  }
+
+  return { success, failed }
+}
+
 export async function updateStockBatch(updates: { productId: number; quantity: number }[]): Promise<{ success: number; failed: number }> {
   let success = 0
   let failed = 0

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { initDatabase, getStockSummary, getStockStatus, updateStock, updateStockBatch } from '@/lib/hybrid-stock'
+import { initDatabase, getStockSummary, getStockStatus, updateStock, updateStockBatch, updateMinStock, updateMinStockBatch } from '@/lib/hybrid-stock'
 import { executeUpdate } from '@/lib/mysql-client'
 
 async function syncStockToSmartPOS(productId: number, quantity: number) {
@@ -48,9 +48,22 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     await initDatabase()
-    
+
     const body = await request.json()
-    
+
+    // Batch update minimum stock
+    if (body.updatesMin && Array.isArray(body.updatesMin)) {
+      const result = await updateMinStockBatch(body.updatesMin)
+      return NextResponse.json(result)
+    }
+
+    // Single minimum stock update
+    if (body.productId && body.minStock !== undefined) {
+      const success = await updateMinStock(body.productId, body.minStock)
+      return NextResponse.json({ success, productId: body.productId, minStock: body.minStock })
+    }
+
+    // Batch update quantity
     if (body.updates && Array.isArray(body.updates)) {
       const result = await updateStockBatch(body.updates)
       // Sync each updated product to SmartPOS
@@ -59,14 +72,15 @@ export async function PUT(request: NextRequest) {
       }
       return NextResponse.json(result)
     }
-    
+
+    // Single quantity update
     if (body.productId && body.quantity !== undefined) {
       const success = await updateStock(body.productId, body.quantity)
       // Sync to SmartPOS immediately
       syncStockToSmartPOS(body.productId, body.quantity)
       return NextResponse.json({ success, productId: body.productId, quantity: body.quantity })
     }
-    
+
     return NextResponse.json({ error: 'Parâmetros inválidos' }, { status: 400 })
   } catch (error) {
     console.error('[API] Stock PUT error:', error)

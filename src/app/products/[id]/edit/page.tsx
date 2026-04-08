@@ -35,7 +35,7 @@ export default function EditProductPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [form, setForm] = useState({
     alphaCode: '', name: '', sellValue: '', costValue: '', eanCode: '',
-    netWeight: '', grossWeight: '', minimumStock: '', observation: '',
+    netWeight: '', grossWeight: '', minimumStock: '',
     exTipi: '', cest: '', isFractional: false, noStock: false,
     isOpenValue: false, showCatalog: true, promotionalValue: '',
     promotionalExpirationDate: '', promotionalDisplayTimer: false,
@@ -91,7 +91,7 @@ export default function EditProductPage() {
           sellValue: String(data.sellValue || ''), costValue: String(data.costValue || ''),
           eanCode: data.eanCode || '', netWeight: String(data.netWeight || ''),
           grossWeight: String(data.grossWeight || ''), minimumStock: String(data.minimumStock || ''),
-          observation: data.observation || '', exTipi: data.exTipi || '', cest: data.cest || '',
+          exTipi: data.exTipi || '', cest: data.cest || '',
           isFractional: data.isFractional || false, noStock: data.noStock || false,
           isOpenValue: data.isOpenValue || false, showCatalog: data.showCatalog ?? true,
           promotionalValue: String(data.promotionalValue || ''),
@@ -217,7 +217,6 @@ export default function EditProductPage() {
         ...form,
         name: form.name.toUpperCase(),
         alphaCode: form.alphaCode.toUpperCase(),
-        observation: form.observation ? form.observation.toUpperCase() : undefined,
         sellValue: parseFloat(form.sellValue) || 0,
         costValue: parseFloat(form.costValue) || 0,
         netWeight: parseFloat(form.netWeight) || 0,
@@ -437,14 +436,14 @@ export default function EditProductPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-[2px] text-[var(--teuco-green)] ml-2">Estoque Mínimo</Label>
-                  <Input 
-                    type="number" 
-                    step="0.01" 
+                  <Label className="text-[10px] font-black uppercase tracking-[2px] text-[var(--teuco-green)] ml-2">Aviso de Estoque Baixo</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
                     inputMode="numeric"
                     onFocus={(e) => e.target.select()}
-                    value={form.minimumStock} 
-                    onChange={(e) => setForm({ ...form, minimumStock: e.target.value })} 
+                    value={form.minimumStock}
+                    onChange={(e) => setForm({ ...form, minimumStock: e.target.value })}
                     className="h-16 text-sm font-bold uppercase"
                   />
                 </div>
@@ -457,16 +456,6 @@ export default function EditProductPage() {
                   </div>
                   <p className="text-[9px] text-[var(--teuco-text-muted)] uppercase tracking-wider ml-2">Edite na página de controle de estoque</p>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-[2px] text-[var(--teuco-green)] ml-2">Observações Detalhadas</Label>
-                <Textarea 
-                  value={form.observation} 
-                  onChange={(e) => setForm({ ...form, observation: e.target.value })} 
-                  placeholder="DIGITE INFORMAÇÕES ADICIONAIS SOBRE O PRODUTO..."
-                  className="min-h-[140px] text-sm font-bold uppercase tracking-wider p-6 leading-relaxed"
-                />
               </div>
 
               <div className="flex flex-col gap-4 pt-4 max-w-sm mx-auto">

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { formatCurrency, cn } from '@/lib/utils'
-import { Search, Plus, AlertCircle, Package, Edit2, Check, FolderOpen, RefreshCw, Trash2, ArrowDownAZ, Hash, ChevronDown, ChevronRight, Minus, X } from 'lucide-react'
+import { Search, Plus, AlertCircle, Package, Edit2, Check, FolderOpen, RefreshCw, Trash2, ArrowDownAZ, Hash, ChevronDown, ChevronRight, Minus, X, SlidersHorizontal } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 import Link from 'next/link'
 import { ExportModal } from '@/components/export-modal'
@@ -51,12 +51,15 @@ export default function StockPage() {
   const [search, setSearch] = useState('')
   const [activeTab, setActiveTab] = useState<StockStatus | 'todos'>('todos')
   const [sortBy, setSortBy] = useState<SortOption>('code')
+  const [editMode, setEditMode] = useState<'quantity' | 'minStock'>('quantity')
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [editQuantity, setEditQuantity] = useState<{ [key: number]: string }>({})
+  const [editMinStock, setEditMinStock] = useState<{ [key: number]: string }>({})
   const [updating, setUpdating] = useState(false)
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
   const [editingProduct, setEditingProduct] = useState<StockProduct | null>(null)
   const [modalQuantity, setModalQuantity] = useState('')
+  const [modalMinStock, setModalMinStock] = useState('')
   const modalInputRef = useRef<HTMLInputElement>(null)
   const inputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({})
   const toast = useToast()
@@ -159,7 +162,11 @@ export default function StockPage() {
 
   function openEditModal(product: StockProduct) {
     setEditingProduct(product)
-    setModalQuantity(String(product.quantity))
+    if (editMode === 'quantity') {
+      setModalQuantity(String(product.quantity))
+    } else {
+      setModalMinStock(String(product.minimumStock))
+    }
     setTimeout(() => {
       modalInputRef.current?.focus()
       modalInputRef.current?.select()
@@ -169,6 +176,7 @@ export default function StockPage() {
   function closeEditModal() {
     setEditingProduct(null)
     setModalQuantity('')
+    setModalMinStock('')
   }
 
   function handleModalIncrement() {
@@ -181,41 +189,80 @@ export default function StockPage() {
 
   async function handleModalSave() {
     if (!editingProduct) return
-    const newQty = parseInt(modalQuantity)
-    if (isNaN(newQty) || newQty < 0) {
-      toast.error('Quantidade inválida')
-      return
-    }
     setUpdating(true)
     try {
-      // If multiple items selected, update all of them
-      if (selectedIds.size > 0 && selectedIds.has(editingProduct.productId)) {
-        const updates = Array.from(selectedIds).map(id => ({
-          productId: id,
-          quantity: newQty
-        }))
-        const res = await fetch('/api/stock', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ updates })
-        })
-        if (res.ok) {
-          toast.success(`${selectedIds.size} produto(s) atualizado(s)`)
-          await fetchStock()
-          setSelectedIds(new Set())
-          closeEditModal()
+      if (editMode === 'minStock') {
+        const newMin = parseInt(modalMinStock)
+        if (isNaN(newMin) || newMin < 0) {
+          toast.error('Valor inválido')
+          setUpdating(false)
+          return
+        }
+        // If multiple items selected, update all of them
+        if (selectedIds.size > 0 && selectedIds.has(editingProduct.productId)) {
+          const updates = Array.from(selectedIds).map(id => ({
+            productId: id,
+            minStock: newMin
+          }))
+          const res = await fetch('/api/stock', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ updatesMin: updates })
+          })
+          if (res.ok) {
+            toast.success(`${selectedIds.size} produto(s) atualizado(s)`)
+            await fetchStock()
+            setSelectedIds(new Set())
+            closeEditModal()
+          }
+        } else {
+          const res = await fetch('/api/stock', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId: editingProduct.productId, minStock: newMin })
+          })
+          if (res.ok) {
+            toast.success('Aviso de estoque baixo atualizado')
+            await fetchStock()
+            closeEditModal()
+          }
         }
       } else {
-        // Single item update
-        const res = await fetch('/api/stock', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productId: editingProduct.productId, quantity: newQty })
-        })
-        if (res.ok) {
-          toast.success('Estoque atualizado')
-          await fetchStock()
-          closeEditModal()
+        // quantity mode
+        const newQty = parseInt(modalQuantity)
+        if (isNaN(newQty) || newQty < 0) {
+          toast.error('Quantidade inválida')
+          setUpdating(false)
+          return
+        }
+        // If multiple items selected, update all of them
+        if (selectedIds.size > 0 && selectedIds.has(editingProduct.productId)) {
+          const updates = Array.from(selectedIds).map(id => ({
+            productId: id,
+            quantity: newQty
+          }))
+          const res = await fetch('/api/stock', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ updates })
+          })
+          if (res.ok) {
+            toast.success(`${selectedIds.size} produto(s) atualizado(s)`)
+            await fetchStock()
+            setSelectedIds(new Set())
+            closeEditModal()
+          }
+        } else {
+          const res = await fetch('/api/stock', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId: editingProduct.productId, quantity: newQty })
+          })
+          if (res.ok) {
+            toast.success('Estoque atualizado')
+            await fetchStock()
+            closeEditModal()
+          }
         }
       }
     } catch {
@@ -254,6 +301,33 @@ export default function StockPage() {
         const newEdit = { ...editQuantity }
         delete newEdit[productId]
         setEditQuantity(newEdit)
+      }
+    } catch {
+      toast.error('Erro ao atualizar')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  async function handleUpdateMinStock(productId: number) {
+    const newMin = parseInt(editMinStock[productId])
+    if (isNaN(newMin) || newMin < 0) {
+      toast.error('Valor inválido')
+      return
+    }
+    setUpdating(true)
+    try {
+      const res = await fetch('/api/stock', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, minStock: newMin })
+      })
+      if (res.ok) {
+        toast.success('Aviso de estoque baixo atualizado')
+        await fetchStock()
+        const newEdit = { ...editMinStock }
+        delete newEdit[productId]
+        setEditMinStock(newEdit)
       }
     } catch {
       toast.error('Erro ao atualizar')
@@ -339,6 +413,35 @@ export default function StockPage() {
           <p className={cn("text-xs font-bold uppercase tracking-wider mt-1", activeTab !== 'ok' ? "text-green-600" : "text-white")}>OK</p>
           {activeTab !== 'ok' && <p className="text-[10px] text-green-400 mt-1 opacity-75">Filtrar</p>}
           {activeTab === 'ok' && <p className="text-[10px] text-white/70 mt-1">Filtrando</p>}
+        </button>
+      </div>
+
+      {/* Edit Mode Toggle */}
+      <div className="flex items-center gap-2 bg-white rounded-xl border border-black/10 p-1.5 shadow-sm">
+        <SlidersHorizontal className="h-4 w-4 text-gray-400 ml-2" />
+        <button
+          onClick={() => { setEditMode('quantity'); closeEditModal() }}
+          className={cn(
+            "flex-1 py-2 px-4 rounded-lg text-xs font-black uppercase tracking-wider transition-all",
+            editMode === 'quantity'
+              ? "bg-[var(--teuco-green)] text-white shadow-sm"
+              : "text-gray-500 hover:bg-gray-100"
+          )}
+        >
+          <Package className="h-3.5 w-3.5 inline mr-1.5" />
+          Quantidade Atual
+        </button>
+        <button
+          onClick={() => { setEditMode('minStock'); closeEditModal() }}
+          className={cn(
+            "flex-1 py-2 px-4 rounded-lg text-xs font-black uppercase tracking-wider transition-all",
+            editMode === 'minStock'
+              ? "bg-amber-500 text-white shadow-sm"
+              : "text-gray-500 hover:bg-gray-100"
+          )}
+        >
+          <AlertCircle className="h-3.5 w-3.5 inline mr-1.5" />
+          Aviso Estoque Baixo
         </button>
       </div>
 
@@ -487,53 +590,107 @@ export default function StockPage() {
 
                     {/* Stock */}
                     <div className="flex items-center gap-2 shrink-0">
-                      <div className={cn("w-8 h-8 rounded flex items-center justify-center text-white text-xs font-bold", statusColor)}>
-                        {product.quantity}
-                      </div>
-                      {/* Desktop: inline editing */}
-                      <div className="hidden lg:flex items-center gap-1">
-                        {editQuantity[product.productId] !== undefined ? (
-                          <>
-                            <Input
-                              type="number"
-                              inputMode="numeric"
-                              onFocus={(e) => e.target.select()}
-                              ref={(el) => { inputRefs.current[product.productId] = el }}
-                              className="h-8 w-16 text-xs"
-                              value={editQuantity[product.productId]}
-                              onChange={(e) => setEditQuantity(prev => ({ ...prev, [product.productId]: e.target.value }))}
-                              placeholder="Novo"
-                            />
-                            <Button size="sm" className="h-8" onClick={() => handleUpdateQuantity(product.productId)}>
-                              <Check className="h-4 w-4" />
-                            </Button>
-                          </>
-                        ) : (
+                      {editMode === 'quantity' ? (
+                        <>
+                          <div className={cn("w-8 h-8 rounded flex items-center justify-center text-white text-xs font-bold", statusColor)}>
+                            {product.quantity}
+                          </div>
+                          {/* Desktop: inline editing */}
+                          <div className="hidden lg:flex items-center gap-1">
+                            {editQuantity[product.productId] !== undefined ? (
+                              <>
+                                <Input
+                                  type="number"
+                                  inputMode="numeric"
+                                  onFocus={(e) => e.target.select()}
+                                  ref={(el) => { inputRefs.current[product.productId] = el }}
+                                  className="h-8 w-16 text-xs"
+                                  value={editQuantity[product.productId]}
+                                  onChange={(e) => setEditQuantity(prev => ({ ...prev, [product.productId]: e.target.value }))}
+                                  placeholder="Novo"
+                                />
+                                <Button size="sm" className="h-8" onClick={() => handleUpdateQuantity(product.productId)}>
+                                  <Check className="h-4 w-4" />
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8"
+                                onClick={() => {
+                                  setEditQuantity(prev => ({ ...prev, [product.productId]: String(product.quantity) }))
+                                  setTimeout(() => {
+                                    inputRefs.current[product.productId]?.focus()
+                                    inputRefs.current[product.productId]?.select()
+                                  }, 50)
+                                }}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                          {/* Mobile: open modal */}
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8"
-                            onClick={() => {
-                              setEditQuantity(prev => ({ ...prev, [product.productId]: String(product.quantity) }))
-                              setTimeout(() => {
-                                inputRefs.current[product.productId]?.focus()
-                                inputRefs.current[product.productId]?.select()
-                              }, 50)
-                            }}
+                            className="h-8 lg:hidden"
+                            onClick={() => openEditModal(product)}
                           >
                             <Edit2 className="h-4 w-4" />
                           </Button>
-                        )}
-                      </div>
-                      {/* Mobile: open modal */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 lg:hidden"
-                        onClick={() => openEditModal(product)}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-8 h-8 rounded bg-amber-500 flex items-center justify-center text-white text-xs font-bold">
+                            {product.minimumStock}
+                          </div>
+                          {/* Desktop: inline editing */}
+                          <div className="hidden lg:flex items-center gap-1">
+                            {editMinStock[product.productId] !== undefined ? (
+                              <>
+                                <Input
+                                  type="number"
+                                  inputMode="numeric"
+                                  onFocus={(e) => e.target.select()}
+                                  ref={(el) => { inputRefs.current[product.productId] = el }}
+                                  className="h-8 w-16 text-xs"
+                                  value={editMinStock[product.productId]}
+                                  onChange={(e) => setEditMinStock(prev => ({ ...prev, [product.productId]: e.target.value }))}
+                                  placeholder="Novo"
+                                />
+                                <Button size="sm" className="h-8" onClick={() => handleUpdateMinStock(product.productId)}>
+                                  <Check className="h-4 w-4" />
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8"
+                                onClick={() => {
+                                  setEditMinStock(prev => ({ ...prev, [product.productId]: String(product.minimumStock) }))
+                                  setTimeout(() => {
+                                    inputRefs.current[product.productId]?.focus()
+                                    inputRefs.current[product.productId]?.select()
+                                  }, 50)
+                                }}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                          {/* Mobile: open modal */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 lg:hidden"
+                            onClick={() => openEditModal(product)}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 )
@@ -553,14 +710,26 @@ export default function StockPage() {
       {/* Bulk edit floating button */}
       {selectedIds.size > 0 && (
         <div className="fixed bottom-20 left-4 right-4 lg:left-72 lg:right-4 z-30">
-          <div className="bg-[var(--teuco-green)] text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-between">
+          <div className={cn(
+            "text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-between",
+            editMode === 'minStock' ? "bg-amber-500" : "bg-[var(--teuco-green)]"
+          )}>
             <span className="text-sm font-bold">{selectedIds.size} produto(s) selecionado(s)</span>
-            <Button variant="ghost" size="sm" className="bg-white text-[var(--teuco-green)] hover:bg-white/90" onClick={() => {
-              const firstSelected = products.find(p => selectedIds.has(p.productId))
-              if (firstSelected) openEditModal(firstSelected)
-            }} disabled={updating}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "hover:bg-white/20",
+                editMode === 'minStock' ? "text-amber-500" : "text-[var(--teuco-green)]"
+              )}
+              onClick={() => {
+                const firstSelected = products.find(p => selectedIds.has(p.productId))
+                if (firstSelected) openEditModal(firstSelected)
+              }}
+              disabled={updating}
+            >
               <Edit2 className="h-4 w-4 mr-1" />
-              Editar
+              {editMode === 'minStock' ? 'Editar Aviso' : 'Editar'}
             </Button>
           </div>
         </div>
@@ -572,7 +741,7 @@ export default function StockPage() {
           <div className="absolute inset-0 bg-black/50" onClick={closeEditModal} />
           <div className="relative bg-white rounded-t-2xl w-full p-6 pb-10 shadow-2xl">
             <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-6" />
-            
+
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div className="min-w-0 flex-1">
@@ -601,63 +770,99 @@ export default function StockPage() {
               </button>
             </div>
 
-            {/* Quantity display */}
-            <div className="text-center mb-6">
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Quantidade Atual</p>
-              <button
-                onClick={() => {
-                  modalInputRef.current?.focus()
-                  modalInputRef.current?.select()
-                }}
-                className="text-6xl font-black text-[var(--teuco-green)] cursor-pointer hover:opacity-80 transition-opacity"
-              >
-                {modalQuantity}
-              </button>
-            </div>
+            {editMode === 'minStock' ? (
+              /* MinStock editing - simple input */
+              <>
+                <div className="text-center mb-6">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Aviso de Estoque Baixo</p>
+                  <input
+                    ref={modalInputRef}
+                    type="number"
+                    inputMode="numeric"
+                    value={modalMinStock}
+                    onChange={(e) => setModalMinStock(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    className="w-28 h-16 text-center text-3xl font-black border-2 border-amber-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                  />
+                </div>
 
-            {/* Plus/Minus buttons */}
-            <div className="flex items-center justify-center gap-6 mb-8">
-              <button
-                onClick={handleModalDecrement}
-                className="w-16 h-16 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center active:scale-95 transition-all"
-              >
-                <Minus className="h-8 w-8 text-gray-700" />
-              </button>
-              
-              <input
-                ref={modalInputRef}
-                type="number"
-                inputMode="numeric"
-                value={modalQuantity}
-                onChange={(e) => setModalQuantity(e.target.value)}
-                className="w-28 h-16 text-center text-3xl font-black border-2 border-[var(--teuco-green)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--teuco-green)]/30"
-              />
-              
-              <button
-                onClick={handleModalIncrement}
-                className="w-16 h-16 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center active:scale-95 transition-all"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-              </button>
-            </div>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={closeEditModal}
+                    className="flex-1 h-14 text-sm font-black uppercase tracking-wider"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleModalSave}
+                    disabled={updating}
+                    className="flex-1 h-14 text-sm font-black uppercase tracking-wider shadow-lg shadow-amber-500/30 bg-amber-500 hover:bg-amber-600"
+                  >
+                    {updating ? 'Salvando...' : 'Salvar'}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              /* Quantity editing - with +/- buttons */
+              <>
+                <div className="text-center mb-6">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Quantidade Atual</p>
+                  <button
+                    onClick={() => {
+                      modalInputRef.current?.focus()
+                      modalInputRef.current?.select()
+                    }}
+                    className="text-6xl font-black text-[var(--teuco-green)] cursor-pointer hover:opacity-80 transition-opacity"
+                  >
+                    {modalQuantity}
+                  </button>
+                </div>
 
-            {/* Save/Cancel buttons */}
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={closeEditModal}
-                className="flex-1 h-14 text-sm font-black uppercase tracking-wider"
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleModalSave}
-                disabled={updating}
-                className="flex-1 h-14 text-sm font-black uppercase tracking-wider shadow-lg shadow-[var(--teuco-green)]/30"
-              >
-                {updating ? 'Salvando...' : 'Salvar'}
-              </Button>
-            </div>
+                {/* Plus/Minus buttons */}
+                <div className="flex items-center justify-center gap-6 mb-8">
+                  <button
+                    onClick={handleModalDecrement}
+                    className="w-16 h-16 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center active:scale-95 transition-all"
+                  >
+                    <Minus className="h-8 w-8 text-gray-700" />
+                  </button>
+
+                  <input
+                    ref={modalInputRef}
+                    type="number"
+                    inputMode="numeric"
+                    value={modalQuantity}
+                    onChange={(e) => setModalQuantity(e.target.value)}
+                    className="w-28 h-16 text-center text-3xl font-black border-2 border-[var(--teuco-green)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--teuco-green)]/30"
+                  />
+
+                  <button
+                    onClick={handleModalIncrement}
+                    className="w-16 h-16 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center active:scale-95 transition-all"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                  </button>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={closeEditModal}
+                    className="flex-1 h-14 text-sm font-black uppercase tracking-wider"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleModalSave}
+                    disabled={updating}
+                    className="flex-1 h-14 text-sm font-black uppercase tracking-wider shadow-lg shadow-[var(--teuco-green)]/30"
+                  >
+                    {updating ? 'Salvando...' : 'Salvar'}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

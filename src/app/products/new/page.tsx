@@ -29,7 +29,7 @@ export default function NewProductPage() {
   const [isAutoCode, setIsAutoCode] = useState(false)
   const [form, setForm] = useState({
     alphaCode: '', name: '', sellValue: '', costValue: '',
-    minimumStock: '1', observation: '',
+    minimumStock: '1',
     category: '',
     detail: { text: '', viewMode: 'TEXT', color: '#ffffff' },
   })
@@ -146,7 +146,6 @@ export default function NewProductPage() {
         ...formWithoutDetail,
         name: form.name.toUpperCase(),
         alphaCode: form.alphaCode.toUpperCase(),
-        observation: form.observation ? form.observation.toUpperCase() : undefined,
         description: form.name.toUpperCase(),
         sellValue: parseFloat(form.sellValue) || 0,
         costValue: parseFloat(form.costValue) || 0,
@@ -297,14 +296,14 @@ export default function NewProductPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-[2px] text-[var(--teuco-green)] ml-2">Estoque Mínimo</Label>
-                  <Input 
-                    type="number" 
-                    step="0.01" 
+                  <Label className="text-[10px] font-black uppercase tracking-[2px] text-[var(--teuco-green)] ml-2">Aviso de Estoque Baixo</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
                     inputMode="numeric"
                     onFocus={(e) => e.target.select()}
-                    value={form.minimumStock} 
-                    onChange={(e) => setForm({ ...form, minimumStock: e.target.value })} 
+                    value={form.minimumStock}
+                    onChange={(e) => setForm({ ...form, minimumStock: e.target.value })}
                     className="h-16 text-sm font-bold uppercase"
                   />
                 </div>
@@ -321,16 +320,6 @@ export default function NewProductPage() {
                     className="h-16 text-xl font-black text-[var(--teuco-green)]"
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-[2px] text-[var(--teuco-green)] ml-2">Observações Detalhadas</Label>
-                <Textarea 
-                  value={form.observation} 
-                  onChange={(e) => setForm({ ...form, observation: e.target.value })} 
-                  placeholder="DIGITE INFORMAÇÕES ADICIONAIS SOBRE O PRODUTO..."
-                  className="min-h-[140px] text-sm font-bold uppercase tracking-wider p-6 leading-relaxed"
-                />
               </div>
 
               <div className="flex flex-col gap-4 pt-4 max-w-sm mx-auto">
