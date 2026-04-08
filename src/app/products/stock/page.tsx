@@ -711,26 +711,26 @@ export default function StockPage() {
       {selectedIds.size > 0 && (
         <div className="fixed bottom-20 left-4 right-4 lg:left-72 lg:right-4 z-50">
           <div className={cn(
-            "text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-between",
+            "text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-between gap-3",
             editMode === 'minStock' ? "bg-amber-500" : "bg-[var(--teuco-green)]"
           )}>
-            <span className="text-sm font-bold">{selectedIds.size} produto(s) selecionado(s)</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "hover:bg-white/20",
-                editMode === 'minStock' ? "text-amber-500" : "text-[var(--teuco-green)]"
-              )}
+            <span className="text-sm font-bold truncate">{selectedIds.size} produto(s) selecionado(s)</span>
+            <button
               onClick={() => {
                 const firstSelected = products.find(p => selectedIds.has(p.productId))
                 if (firstSelected) openEditModal(firstSelected)
               }}
               disabled={updating}
+              className={cn(
+                "flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-black uppercase tracking-wider shrink-0 transition-colors",
+                editMode === 'minStock'
+                  ? "bg-white text-amber-600 hover:bg-amber-50"
+                  : "bg-white text-[var(--teuco-green)] hover:bg-gray-50"
+              )}
             >
-              <Edit2 className="h-4 w-4 mr-1" />
+              <Edit2 className="h-4 w-4" />
               {editMode === 'minStock' ? 'Editar Aviso' : 'Editar'}
-            </Button>
+            </button>
           </div>
         </div>
       )}
