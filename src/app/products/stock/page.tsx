@@ -709,7 +709,7 @@ export default function StockPage() {
 
       {/* Bulk edit floating button */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-20 left-4 right-4 lg:left-72 lg:right-4 z-30">
+        <div className="fixed bottom-20 left-4 right-4 lg:left-72 lg:right-4 z-50">
           <div className={cn(
             "text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-between",
             editMode === 'minStock' ? "bg-amber-500" : "bg-[var(--teuco-green)]"
