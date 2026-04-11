@@ -49,10 +49,14 @@ export async function GET(request: NextRequest) {
 
     const sales = Array.from(salesMap.values())
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       sales,
       count: sales.length,
     })
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    return response
   } catch (error: any) {
     console.error('[API] Check new sales error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })

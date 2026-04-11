@@ -123,11 +123,15 @@ export async function POST(request: NextRequest) {
       conn.release()
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       synced: syncedCount,
       totalFetched: sales.length,
       lastSyncDate: endDate,
     })
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    return response
   } catch (error: any) {
     console.error('[Sync] Error:', error)
     return NextResponse.json({ error: error.message || 'Erro ao sincronizar' }, { status: 500 })

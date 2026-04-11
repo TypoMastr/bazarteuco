@@ -1,25 +1,22 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 
-const CATCHUP_STORAGE_KEY = 'bazar_last_catchup'
-const CATCHUP_INTERVAL_MS = 24 * 60 * 60 * 1000 // 24 hours
-
 interface UseSalesStreamOptions {
   enabled?: boolean
+  hasSalesToday?: boolean
   onNewSale?: (sale: any) => void
+  onRefresh?: () => void
 }
 
-export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOptions = {}) {
-  const [status, setStatus] = useState<'connected' | 'reconnecting' | 'offline'>('reconnecting')
-  const [lastSyncDate, setLastSyncDate] = useState<string | null>(null)
-  const [isCatchingUp, setIsCatchingUp] = useState(false)
+export function useSalesStream({ enabled = true, hasSalesToday = false, onNewSale, onRefresh }: UseSalesStreamOptions = {}) {
+  const [status, setStatus] = useState<'connected' | 'reconnecting' | 'offline'>('offline')
   const [isInitialSync, setIsInitialSync] = useState(false)
-  const [catchUpProgress, setCatchUpProgress] = useState(0)
-  const [catchUpMessage, setCatchUpMessage] = useState('')
-  const [hasSalesToday, setHasSalesToday] = useState(false)
   const knownSaleIds = useRef<Set<string>>(new Set())
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const isSyncingRef = useRef(false)
+  const onRefreshRef = useRef(onRefresh)
+  const lastPolledDate = useRef<string>(new Date().toISOString().split('T')[0])
+  onRefreshRef.current = onRefresh
 
   const playNotificationSound = useCallback(() => {
     try {
@@ -37,146 +34,134 @@ export function useSalesStream({ enabled = true, onNewSale }: UseSalesStreamOpti
     } catch {}
   }, [])
 
-  const needsCatchUp = useCallback(() => {
-    try {
-      const last = localStorage.getItem(CATCHUP_STORAGE_KEY)
-      if (!last) return true
-      return Date.now() - parseInt(last) > CATCHUP_INTERVAL_MS
-    } catch {
-      return true
-    }
-  }, [])
-
-  const markCatchUpDone = useCallback(() => {
-    try {
-      localStorage.setItem(CATCHUP_STORAGE_KEY, String(Date.now()))
-    } catch {}
-  }, [])
-
-  const syncSales = useCallback(async (isCatchUp: boolean) => {
-    if (isSyncingRef.current) return
-    isSyncingRef.current = true
-
-    if (isCatchUp) {
-      setIsInitialSync(true)
-      setIsCatchingUp(true)
-      setCatchUpProgress(10)
-      setCatchUpMessage('Buscando vendas do sistema...')
-    }
-
-    try {
-      const body: any = {}
-      if (lastSyncDate) body.since = lastSyncDate
-
-      const res = await fetch('/api/sync-sales', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-
-      if (!res.ok) throw new Error('Sync failed')
-
-      const data = await res.json()
-
-      if (data.synced > 0 || data.lastSyncDate) {
-        setHasSalesToday(true)
-      }
-
-      if (isCatchUp) {
-        setCatchUpProgress(70)
-        setCatchUpMessage(data.synced > 0 ? `Encontradas ${data.synced} venda(s) nova(s)...` : 'Nenhuma venda pendente.')
-
-        await new Promise(r => setTimeout(r, 400))
-
-        setCatchUpProgress(100)
-        setCatchUpMessage('Dados atualizados!')
-        markCatchUpDone()
-      }
-
-      if (data.lastSyncDate) {
-        setLastSyncDate(data.lastSyncDate)
-      }
-
-      setStatus('connected')
-    } catch {
-      setStatus('reconnecting')
-      if (isCatchUp) {
-        setCatchUpMessage('Erro ao sincronizar. Tentando novamente...')
-      }
-    } finally {
-      isSyncingRef.current = false
-      if (isCatchUp) {
-        setIsInitialSync(false)
-        setIsCatchingUp(false)
-      }
-    }
-  }, [lastSyncDate, markCatchUpDone])
+  const shouldPoll = useCallback(() => {
+    if (!enabled) return false
+    if (!hasSalesToday) return false
+    if (document.visibilityState === 'hidden') return false
+    
+    const today = new Date().toISOString().split('T')[0]
+    if (today !== lastPolledDate.current) return false
+    
+    return true
+  }, [enabled, hasSalesToday])
 
   const checkNewSales = useCallback(async () => {
-    if (!lastSyncDate || isSyncingRef.current || !hasSalesToday) return
+    if (isSyncingRef.current) return
+    if (!shouldPoll()) return
+
+    isSyncingRef.current = true
 
     try {
-      const res = await fetch(`/api/check-new-sales?since=${encodeURIComponent(lastSyncDate)}`)
+      const today = new Date().toISOString().split('T')[0]
+      const now = new Date().toISOString()
+      const res = await fetch(`/api/sales?start=${today}T00:00:00Z&end=${now}`, {
+        cache: 'no-store',
+      })
       if (!res.ok) throw new Error('Check failed')
 
       const data = await res.json()
+      const salesList = Array.isArray(data) ? data : (data?.items || data?.data || [])
 
-      if (data.sales && data.sales.length > 0) {
-        for (const sale of data.sales) {
-          if (!knownSaleIds.current.has(sale.sale_id)) {
-            knownSaleIds.current.add(sale.sale_id)
-            if (onNewSale) onNewSale(sale)
-            playNotificationSound()
-          }
+      let hasNew = false
+      for (const sale of salesList) {
+        const saleId = sale.id || sale.uniqueIdentifier
+        if (!knownSaleIds.current.has(saleId)) {
+          knownSaleIds.current.add(saleId)
+          if (onNewSale) onNewSale({
+            sale_id: sale.id,
+            unique_identifier: sale.uniqueIdentifier,
+            creation_date: sale.creationDate,
+            total_amount: sale.totalAmount,
+            is_canceled: sale.isCanceled,
+          })
+          playNotificationSound()
+          hasNew = true
         }
+      }
+
+      if (hasNew && onRefreshRef.current) {
+        onRefreshRef.current()
       }
 
       setStatus('connected')
     } catch {
       setStatus('reconnecting')
+    } finally {
+      isSyncingRef.current = false
     }
-  }, [lastSyncDate, onNewSale, playNotificationSound, hasSalesToday])
+  }, [shouldPoll, onNewSale, playNotificationSound])
 
-  // Initial sync — modal once per day, silent otherwise
-  useEffect(() => {
-    if (!enabled) return
+  const syncAndCheck = useCallback(async () => {
+    if (!shouldPoll()) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+      return
+    }
 
-    if (needsCatchUp()) {
-      syncSales(true)
-    } else {
-      syncSales(false).then(() => {
-        checkNewSales()
+    if (isSyncingRef.current) return
+    isSyncingRef.current = true
+
+    try {
+      await fetch('/api/sync-sales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
       })
+    } catch {
+      console.error('[Stream] Sync failed')
     }
-  }, [enabled, syncSales, needsCatchUp, checkNewSales])
 
-  // Polling after initial sync
+    isSyncingRef.current = false
+    await checkNewSales()
+
+    if (shouldPoll() && !intervalRef.current) {
+      intervalRef.current = setInterval(syncAndCheck, 5000)
+    }
+  }, [shouldPoll, checkNewSales])
+
   useEffect(() => {
-    if (!enabled || isInitialSync || !hasSalesToday) return
-
-    const runCycle = () => {
-      syncSales(false).then(() => {
-        checkNewSales()
-      })
+    if (!enabled || !hasSalesToday) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+      return
     }
 
-    intervalRef.current = setInterval(runCycle, 5000)
+    const today = new Date().toISOString().split('T')[0]
+    lastPolledDate.current = today
+
+    setIsInitialSync(true)
+    syncAndCheck().then(() => {
+      setIsInitialSync(false)
+    })
+
+    intervalRef.current = setInterval(syncAndCheck, 5000)
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && shouldPoll()) {
+        syncAndCheck()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [enabled, isInitialSync, hasSalesToday, syncSales, checkNewSales])
+  }, [enabled, hasSalesToday, syncAndCheck, shouldPoll])
 
   return {
     status,
-    isCatchingUp,
     isInitialSync,
-    catchUpProgress,
-    catchUpMessage,
-    lastSyncDate,
-    hasSalesToday,
     triggerSync: () => {
-      syncSales(true)
+      if (shouldPoll()) syncAndCheck()
     },
   }
 }

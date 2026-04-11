@@ -1,16 +1,14 @@
 'use client'
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { formatCurrency, formatDate, cn, todayBR, formatDateBR } from '@/lib/utils'
+import { formatCurrency, formatDate, todayBR, formatDateBR } from '@/lib/utils'
 import {
-  Search, Loader2, Calendar, X,
-  ShoppingCart, Package, RefreshCw,
-  Banknote, ShoppingBag, Wifi, WifiOff, WifiLow
+  Search, Loader2, X,
+  RefreshCw,
+  Wifi, WifiOff, WifiLow
 } from 'lucide-react'
-import { salesCache } from '@/lib/sales-cache'
 import { ExportModal } from '@/components/export-modal'
 import { PageHeader } from '@/components/page-header'
 import { SyncCatchUpModal } from '@/components/sync-catchup-modal'
@@ -74,11 +72,49 @@ export default function SalesPage() {
   const [latestDate, setLatestDate] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [newSalesCount, setNewSalesCount] = useState(0)
+  const knownSaleIds = useRef<Set<string>>(new Set())
   const [showCatchUp, setShowCatchUp] = useState(false)
   const [catchUpProgress, setCatchUpProgress] = useState(0)
   const [catchUpMessage, setCatchUpMessage] = useState('')
   const decrementedSalesRef = useRef<Set<string>>(new Set())
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const salesRef = useRef(sales)
+  const saleItemsRef = useRef(saleItems)
+
+  salesRef.current = sales
+  saleItemsRef.current = saleItems
+
+  const fetchSales = useCallback(async (start: string, end: string) => {
+    setLoading(true); setSales([]); setSaleItems({})
+    setError(null); setAllItemsLoaded(false); setProgress(null)
+    try {
+      const startISO = `${start}T00:00:00Z`
+      const endISO = `${end}T23:59:59Z`
+      const res = await fetch(`/api/sales?start=${encodeURIComponent(startISO)}&end=${encodeURIComponent(endISO)}`, { cache: 'no-store' })
+      if (!res.ok) throw new Error('Erro ao carregar vendas')
+      const data = await res.json()
+      const salesList = Array.isArray(data) ? data : (data.items || data.data || [])
+      setSales(salesList)
+      knownSaleIds.current = new Set(salesList.map((s: any) => s.id || s.uniqueIdentifier))
+      fetchAllItems(salesList)
+      return salesList
+    } catch (err) { setError(String(err)); return [] }
+    finally { setLoading(false) }
+  }, [])
+
+  const fetchAllItems = useCallback(async (salesList: any[], existingItems: Record<string, any[]> = {}) => {
+    const uids = salesList.map((s: any) => s.uniqueIdentifier || s.id).filter((uid: string) => !existingItems[uid])
+    if (uids.length === 0) { setAllItemsLoaded(true); return existingItems }
+    setLoadingItems(new Set(uids)); setProgress({ current: 0, total: uids.length })
+    const itemsMap = await fetchSaleItemsBatch(uids, (current, total) => {
+      setProgress({ current, total })
+    })
+    const merged = { ...existingItems, ...itemsMap }
+    setSaleItems(merged)
+    setLoadingItems(new Set()); setProgress(null); setAllItemsLoaded(true)
+    return merged
+  }, [])
 
   const handleNewSale = useCallback((sale: any) => {
     setSales((prev) => {
@@ -96,50 +132,7 @@ export default function SalesPage() {
     })
   }, [])
 
-  const { status: streamStatus, isCatchingUp, catchUpProgress: streamProgress, catchUpMessage: streamMessage, isInitialSync } = useSalesStream({
-    enabled: !!latestDate,
-    onNewSale: handleNewSale,
-  })
-
-  const salesRef = useRef(sales)
-  const saleItemsRef = useRef(saleItems)
-
-  salesRef.current = sales
-  saleItemsRef.current = saleItems
-
-  const fetchSales = useCallback(async (start: string, end: string, append = false) => {
-    if (!append) { setLoading(true); setSales([]); setSaleItems({}) }
-    setError(null); setAllItemsLoaded(false); setProgress(null)
-    try {
-      const startISO = `${start}T00:00:00Z`
-      const endISO = `${end}T23:59:59Z`
-      const res = await fetch(`/api/sales?start=${encodeURIComponent(startISO)}&end=${encodeURIComponent(endISO)}`)
-      if (!res.ok) throw new Error('Erro ao carregar vendas')
-      const data = await res.json()
-      const salesList = Array.isArray(data) ? data : (data.items || data.data || [])
-      if (append) {
-        setSales((prev) => salesCache.mergeSales(prev, salesList))
-        return salesCache.mergeSales(salesRef.current, salesList)
-      }
-      setSales(salesList)
-      return salesList
-    } catch (err) { setError(String(err)); return [] }
-    finally { if (!append) setLoading(false) }
-  }, [])
-
-  const fetchAllItems = useCallback(async (salesList: any[], existingItems: Record<string, any[]> = {}) => {
-    const uids = salesList.map((s: any) => s.uniqueIdentifier || s.id).filter((uid: string) => !existingItems[uid])
-    if (uids.length === 0) { setAllItemsLoaded(true); return existingItems }
-    setLoadingItems(new Set(uids)); setProgress({ current: 0, total: uids.length })
-    const itemsMap = await fetchSaleItemsBatch(uids, (current, total) => {
-      setProgress({ current, total })
-    })
-    const merged = { ...existingItems, ...itemsMap }
-    setSaleItems(merged)
-    setLoadingItems(new Set()); setProgress(null); setAllItemsLoaded(true)
-    return merged
-  }, [])
-
+  const handleSyncRef = useRef<() => void>(() => {})
   const handleSync = useCallback(async () => {
     const currentLatestDate = latestDate
     if (!currentLatestDate || syncing) return
@@ -161,7 +154,7 @@ export default function SalesPage() {
         })
         if (toDecrement.length > 0) {
           setNewSalesCount(toDecrement.length)
-          setSales((prev) => salesCache.mergeSales(prev, toDecrement))
+          setSales((prev) => [...prev, ...toDecrement])
           const uids = toDecrement.map((s: any) => s.uniqueIdentifier || s.id)
           const existingItems = saleItemsRef.current
           const itemsMap = await fetchSaleItemsBatch(uids, (current, total) => {
@@ -193,25 +186,25 @@ export default function SalesPage() {
     } catch (error) { console.error('[Sales] Sync error:', error) } finally { setSyncing(false); setTimeout(() => setNewSalesCount(0), 3000) }
   }, [latestDate, syncing])
 
-  useEffect(() => { salesCache.clearOldCache() }, [])
+  handleSyncRef.current = handleSync
+
+  const isToday = startDate === todayBR()
+  const hasSalesToday = isToday && sales.length > 0
+
+  const { status: streamStatus, isInitialSync } = useSalesStream({
+    enabled: isToday,
+    hasSalesToday,
+    onNewSale: handleNewSale,
+    onRefresh: () => handleSyncRef.current(),
+  })
 
   useEffect(() => {
     fetch('/api/reports/latest').then(r => r.json()).then(data => {
       if (!data.latestDate) { const today = todayBR(); setStartDate(today); setEndDate(today); setLoading(false); return }
       const latestDate = data.latestDate; setLatestDate(latestDate); setStartDate(latestDate); setEndDate(latestDate)
-      const cached = salesCache.get(latestDate); const cachedItems = salesCache.getItems(latestDate)
-      if (cached && cachedItems && Object.keys(cachedItems.data).length === cached.data.length) {
-        setSales(cached.data); setSaleItems(cachedItems.data); setLoading(false); setAllItemsLoaded(true)
-      } else {
-        fetchSales(latestDate, latestDate).then((salesList) => {
-          if (salesList.length > 0) {
-            salesCache.set(latestDate, salesList, salesList[0]?.creationDate || new Date().toISOString())
-            fetchAllItems(salesList).then((allItems) => {
-              salesCache.setItems(latestDate, allItems, salesList[0]?.creationDate || new Date().toISOString())
-            })
-          } else setAllItemsLoaded(true)
-        })
-      }
+      fetchSales(latestDate, latestDate).then(() => {
+        setAllItemsLoaded(true)
+      })
     }).catch(() => {
       const today = todayBR(); setStartDate(today); setEndDate(today); setLoading(false)
     })
@@ -232,14 +225,7 @@ export default function SalesPage() {
   const totalItems = useMemo(() => Object.values(saleItems).reduce((sum: number, items: any[]) => sum + items.length, 0), [saleItems])
 
   function handleFilter() {
-    fetchSales(startDate, endDate).then((salesList) => {
-      if (salesList.length > 0) {
-        salesCache.set(startDate, salesList, salesList[0]?.creationDate || new Date().toISOString())
-        fetchAllItems(salesList).then((allItems) => {
-          salesCache.setItems(startDate, allItems, salesList[0]?.creationDate || new Date().toISOString())
-        })
-      } else setAllItemsLoaded(true)
-    })
+    fetchSales(startDate, endDate)
   }
 
   if (loading || isInitialSync) {
@@ -401,13 +387,6 @@ export default function SalesPage() {
           </div>
         )}
       </div>
-
-      <SyncCatchUpModal
-        open={isCatchingUp}
-        progress={streamProgress}
-        message={streamMessage}
-        onComplete={() => {}}
-      />
     </div>
   )
 }

@@ -3,22 +3,18 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card } from '@/components/ui/card'
-import { formatCurrency, cn } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import {
-  RefreshCw, AlertCircle, Calendar,
-  Percent, Loader2, Package,
+  RefreshCw, AlertCircle,
+  Loader2, Package,
   ArrowUpDown, ArrowUp, ArrowDown, TrendingUp,
-  ShoppingBag, Banknote, ChevronLeft
+  Banknote
 } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
-import { reportCache } from '@/lib/sales-cache'
 import { ExportModal } from '@/components/export-modal'
 import { PageHeader } from '@/components/page-header'
 import { matchesGiraDaMata, matchesEventos, calculateCategoryRevenue, hasCategoryProducts } from '@/lib/report-categories'
-import Link from 'next/link'
 import { useSalesStream } from '@/hooks/use-sales-stream'
-import { SyncCatchUpModal } from '@/components/sync-catchup-modal'
 import { Wifi, WifiOff, WifiLow } from 'lucide-react'
 
 const ITEM_FETCH_CONCURRENCY = 4
@@ -61,8 +57,6 @@ export default function DailyReportPage() {
   const [selectedDate, setSelectedDate] = useState(todayBR())
   const [refreshing, setRefreshing] = useState(false)
   const [loadingReport, setLoadingReport] = useState(true)
-  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null)
-  const [isCached, setIsCached] = useState(false)
   const [sortField, setSortField] = useState<'quantity' | 'total'>('quantity')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
@@ -78,19 +72,15 @@ export default function DailyReportPage() {
     return null
   }, [])
 
-  const fetchReport = useCallback(async (date: string, skipCache = true) => {
-    if (!skipCache) {
-      const cached = reportCache.get(date)
-      if (cached) { setReport(cached.data as ReportData); setLoadingReport(false); setIsCached(true); return }
-    }
-    setIsCached(false); setLoadingReport(true); setError(null); setReport(null); setProgress(null)
+  const fetchReport = useCallback(async (date: string) => {
+    setLoadingReport(true); setError(null); setReport(null)
     try {
-      const res = await fetch(`/api/reports/mysql?type=daily&date=${date}`)
+      const res = await fetch(`/api/reports/mysql?type=daily&date=${date}`, { cache: 'no-store' })
       if (!res.ok) throw new Error('Erro ao carregar relatório')
       const data = await res.json()
-      setReport(data); reportCache.set(date, data, new Date().toISOString())
+      setReport(data)
     } catch { setError('Erro ao carregar relatório') }
-    finally { setLoadingReport(false); setProgress(null) }
+    finally { setLoadingReport(false) }
   }, [])
 
   useEffect(() => {
@@ -98,11 +88,12 @@ export default function DailyReportPage() {
   }, [fetchLatest, fetchReport])
 
   async function handleGenerate() { fetchReport(selectedDate) }
-  async function handleRefresh() {
+  function handleRefresh() {
     setRefreshing(true)
-    await fetchReport(selectedDate, true)
-    toast.success('Atualizado')
-    setRefreshing(false)
+    fetchReport(selectedDate).then(() => {
+      toast.success('Atualizado')
+      setRefreshing(false)
+    })
   }
   function toggleSort(field: 'quantity' | 'total') {
     if (sortField === field) setSortDir(d => d === 'desc' ? 'asc' : 'desc')
@@ -139,14 +130,19 @@ export default function DailyReportPage() {
     return hasCategoryProducts(report.products, matchesEventos)
   }, [report])
 
+  const isToday = selectedDate === todayBR()
+  const hasSalesToday = isToday && !!report && report.summary.totalSales > 0
+
   // Real-time sync
   const handleNewSale = useCallback(() => {
-    if (selectedDate) fetchReport(selectedDate, true)
+    if (selectedDate) fetchReport(selectedDate)
   }, [selectedDate, fetchReport])
 
-  const { status: streamStatus, isCatchingUp, catchUpProgress: streamProgress, catchUpMessage: streamMessage, isInitialSync } = useSalesStream({
-    enabled: !!report,
+  const { status: streamStatus, isInitialSync } = useSalesStream({
+    enabled: isToday,
+    hasSalesToday,
     onNewSale: handleNewSale,
+    onRefresh: handleNewSale,
   })
 
   function SortIcon({ field }: { field: 'quantity' | 'total' }) {
@@ -220,18 +216,6 @@ export default function DailyReportPage() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
           <AlertCircle className="h-4 w-4 text-red-500" />
           <span className="text-xs font-bold text-red-600">{error}</span>
-        </div>
-      )}
-
-      {loadingReport && progress && (
-        <div className="bg-white rounded-lg p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-[var(--teuco-green)] uppercase">Processando...</span>
-            <span className="text-xs font-black text-[var(--teuco-green)]">{Math.round((progress.current / progress.total) * 100)}%</span>
-          </div>
-          <div className="h-2 bg-black/10 rounded-full overflow-hidden">
-            <div className="h-full bg-[var(--teuco-green)] transition-all" style={{ width: `${(progress.current / progress.total) * 100}%` }} />
-          </div>
         </div>
       )}
 
@@ -356,12 +340,6 @@ export default function DailyReportPage() {
         </div>
       )}
 
-      <SyncCatchUpModal
-        open={isCatchingUp}
-        progress={streamProgress}
-        message={streamMessage}
-        onComplete={() => {}}
-      />
     </div>
   )
 }
