@@ -55,14 +55,13 @@ export default function DailyReportPage() {
   const [report, setReport] = useState<ReportData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState(todayBR())
-  const [refreshing, setRefreshing] = useState(false)
   const [loadingReport, setLoadingReport] = useState(true)
   const [sortField, setSortField] = useState<'quantity' | 'total'>('quantity')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
   const fetchLatest = useCallback(async (): Promise<string | null> => {
     try {
-      const res = await fetch('/api/reports/latest')
+      const res = await fetch('/api/reports/latest', { cache: 'no-store' })
       const data = await res.json()
       if (data.latestDate) {
         setSelectedDate(data.latestDate)
@@ -87,12 +86,18 @@ export default function DailyReportPage() {
     fetchLatest().then((date) => { if (date) fetchReport(date) })
   }, [fetchLatest, fetchReport])
 
-  async function handleGenerate() { fetchReport(selectedDate) }
-  function handleRefresh() {
-    setRefreshing(true)
-    fetchReport(selectedDate).then(() => {
+  function handleGenerate() { fetchReport(selectedDate) }
+  
+  function reloadAll() {
+    setLoadingReport(true)
+    setReport(null)
+    setError(null)
+    fetchLatest().then((date) => { 
+      if (date) {
+        setSelectedDate(date)
+        fetchReport(date)
+      }
       toast.success('Atualizado')
-      setRefreshing(false)
     })
   }
   function toggleSort(field: 'quantity' | 'total') {
@@ -190,9 +195,9 @@ export default function DailyReportPage() {
               </div>
             )}
             {report && <ExportModal type="report" data={report} sortedProducts={sortedProducts} extraData={{ correctedBazarRevenue, giraDaMataRevenue, eventosRevenue, showGiraDaMata, showEventos, sortField, sortDir }} />}
-            <Button variant="tonal" onClick={handleRefresh} disabled={refreshing} className="h-9 px-3 text-xs">
-              <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
-              {refreshing ? '...' : 'Atualizar'}
+            <Button variant="tonal" onClick={reloadAll} className="h-9 px-3 text-xs">
+              <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+              Atualizar
             </Button>
           </>
         }

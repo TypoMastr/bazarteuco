@@ -211,8 +211,30 @@ export default function SalesPage() {
     onRefresh: () => handleSyncRef.current(),
   })
 
+  const reloadAll = useCallback(() => {
+    knownSaleIds.current.clear()
+    setSales([])
+    setSaleItems({})
+    setNewSalesCount(0)
+    setLoading(true)
+    setError(null)
+    
+    fetch('/api/reports/latest', { cache: 'no-store' }).then(r => r.json()).then(data => {
+      if (!data.latestDate) { const today = todayBR(); setStartDate(today); setEndDate(today); setLoading(false); return }
+      const latestDate = data.latestDate
+      setLatestDate(latestDate)
+      setStartDate(latestDate)
+      setEndDate(latestDate)
+      fetchSales(latestDate, latestDate).then(() => {
+        setAllItemsLoaded(true)
+      })
+    }).catch(() => {
+      const today = todayBR(); setStartDate(today); setEndDate(today); setLoading(false)
+    })
+  }, [fetchSales])
+
   useEffect(() => {
-    fetch('/api/reports/latest').then(r => r.json()).then(data => {
+    fetch('/api/reports/latest', { cache: 'no-store' }).then(r => r.json()).then(data => {
       if (!data.latestDate) { const today = todayBR(); setStartDate(today); setEndDate(today); setLoading(false); return }
       const latestDate = data.latestDate; setLatestDate(latestDate); setStartDate(latestDate); setEndDate(latestDate)
       fetchSales(latestDate, latestDate).then(() => {
@@ -221,7 +243,7 @@ export default function SalesPage() {
     }).catch(() => {
       const today = todayBR(); setStartDate(today); setEndDate(today); setLoading(false)
     })
-  }, [])
+  }, [fetchSales])
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
@@ -277,9 +299,9 @@ export default function SalesPage() {
                 {streamStatus === 'connected' ? 'Ao vivo' : streamStatus === 'reconnecting' ? 'Conectando...' : 'Offline'}
               </span>
             </div>
-            <Button variant="tonal" onClick={handleSync} disabled={syncing} className="h-9 px-4">
-              <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-              {syncing ? 'Sync' : 'Atualizar'}
+            <Button variant="tonal" onClick={reloadAll} className="h-9 px-4">
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              Atualizar
             </Button>
             <ExportModal type="sales" data={sales} saleItems={saleItems} dateRange={{ start: startDate, end: endDate }} />
           </>
