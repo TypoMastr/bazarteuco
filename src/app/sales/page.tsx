@@ -300,7 +300,7 @@ export default function SalesPage() {
               </span>
             </div>
             <Button variant="tonal" onClick={reloadAll} className="h-9 px-4">
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              <RefreshCw className="h-4 w-4 mr-2" />
               Atualizar
             </Button>
             <ExportModal type="sales" data={sales} saleItems={saleItems} dateRange={{ start: startDate, end: endDate }} />

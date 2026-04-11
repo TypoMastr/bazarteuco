@@ -196,7 +196,7 @@ export default function DailyReportPage() {
             )}
             {report && <ExportModal type="report" data={report} sortedProducts={sortedProducts} extraData={{ correctedBazarRevenue, giraDaMataRevenue, eventosRevenue, showGiraDaMata, showEventos, sortField, sortDir }} />}
             <Button variant="tonal" onClick={reloadAll} className="h-9 px-3 text-xs">
-              <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+              <RefreshCw className="h-4 w-4 mr-1" />
               Atualizar
             </Button>
           </>
