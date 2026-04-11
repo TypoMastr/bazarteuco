@@ -85,6 +85,19 @@ export default function SalesPage() {
   salesRef.current = sales
   saleItemsRef.current = saleItems
 
+  const fetchAllItems = useCallback(async (salesList: any[], existingItems: Record<string, any[]> = {}) => {
+    const uids = salesList.map((s: any) => s.uniqueIdentifier || s.id).filter((uid: string) => !existingItems[uid])
+    if (uids.length === 0) { setAllItemsLoaded(true); return existingItems }
+    setLoadingItems(new Set(uids)); setProgress({ current: 0, total: uids.length })
+    const itemsMap = await fetchSaleItemsBatch(uids, (current, total) => {
+      setProgress({ current, total })
+    })
+    const merged = { ...existingItems, ...itemsMap }
+    setSaleItems(merged)
+    setLoadingItems(new Set()); setProgress(null); setAllItemsLoaded(true)
+    return merged
+  }, [])
+
   const fetchSales = useCallback(async (start: string, end: string) => {
     setLoading(true); setSales([]); setSaleItems({})
     setError(null); setAllItemsLoaded(false); setProgress(null)
@@ -101,33 +114,33 @@ export default function SalesPage() {
       return salesList
     } catch (err) { setError(String(err)); return [] }
     finally { setLoading(false) }
-  }, [])
-
-  const fetchAllItems = useCallback(async (salesList: any[], existingItems: Record<string, any[]> = {}) => {
-    const uids = salesList.map((s: any) => s.uniqueIdentifier || s.id).filter((uid: string) => !existingItems[uid])
-    if (uids.length === 0) { setAllItemsLoaded(true); return existingItems }
-    setLoadingItems(new Set(uids)); setProgress({ current: 0, total: uids.length })
-    const itemsMap = await fetchSaleItemsBatch(uids, (current, total) => {
-      setProgress({ current, total })
-    })
-    const merged = { ...existingItems, ...itemsMap }
-    setSaleItems(merged)
-    setLoadingItems(new Set()); setProgress(null); setAllItemsLoaded(true)
-    return merged
-  }, [])
+  }, [fetchAllItems])
 
   const handleNewSale = useCallback((sale: any) => {
+    const saleId = sale.sale_id
+    const uid = sale.unique_identifier || saleId
+    
     setSales((prev) => {
-      const exists = prev.some((s: any) => (s.uniqueIdentifier || s.id) === (sale.unique_identifier || sale.sale_id))
+      const exists = prev.some((s: any) => (s.uniqueIdentifier || s.id) === uid)
       if (exists) return prev
       const newSale = {
-        id: sale.sale_id,
+        id: saleId,
         uniqueIdentifier: sale.unique_identifier,
         creationDate: sale.creation_date,
         totalAmount: sale.total_amount,
         isCanceled: sale.is_canceled,
       }
       setNewSalesCount((c) => c + 1)
+      
+      fetchSaleItems(uid).then((items) => {
+        if (items.length > 0) {
+          setSaleItems((prevItems) => ({
+            ...prevItems,
+            [uid]: items
+          }))
+        }
+      })
+      
       return [newSale, ...prev]
     })
   }, [])
