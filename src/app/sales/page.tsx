@@ -256,7 +256,7 @@ export default function SalesPage() {
     })
   }, [sales, search, saleItems])
 
-  const totalRevenue = useMemo(() => sales.reduce((sum: number, s: any) => sum + (s.totalAmount || 0), 0), [sales])
+  const totalRevenue = useMemo(() => sales.reduce((sum: number, s: any) => s.isCanceled ? sum : sum + (s.totalAmount || 0), 0), [sales])
   const totalItems = useMemo(() => Object.values(saleItems).reduce((sum: number, items: any[]) => sum + items.length, 0), [saleItems])
 
   function handleFilter() {
