@@ -489,12 +489,16 @@ export default function EditProductPage() {
 
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-[2px] text-[var(--teuco-green)] ml-2">Categoria *</Label>
-                  <Select 
-                    value={form.category} 
-                    onChange={(e) => handleCategoryChange(e.target.value)}
-                    options={categories.map((c) => ({ value: String(c.id), label: (c.name || c.description || '').toUpperCase() }))} 
-                    className="h-16 text-sm font-bold uppercase tracking-wider"
-                  />
+                  {fetching ? (
+                    <div className="h-16 rounded-xl border-2 border-[#DEE2E6] bg-white flex items-center px-4 text-sm text-gray-400">Carregando...</div>
+                  ) : (
+                    <Select 
+                      value={form.category}
+                      onChange={(e) => handleCategoryChange(e.target.value)}
+                      options={categories.map((c) => ({ value: String(c.id), label: (c.name || c.description || '').toUpperCase() }))} 
+                      className="h-16 text-sm font-bold uppercase tracking-wider"
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-2">
