@@ -139,7 +139,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const payload: Record<string, unknown> = {}
 
     if (body.name !== undefined) {
-      payload.name = (body.name || '').toUpperCase()
       payload.description = (body.name || '').toUpperCase()
     }
     if (body.alphaCode !== undefined) payload.alphaCode = (body.alphaCode || '').toUpperCase()
@@ -195,7 +194,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       if (body.promotionalDisplayTimer !== undefined) payload.promotionalDisplayTimer = body.promotionalDisplayTimer
     }
 
-    // taxesRuleId is a UUID string — preserve from current product if not sent
+    // taxesRuleId is a UUID string — try to find a valid one
     if (body.taxesRuleId !== undefined) {
       payload.taxesRuleId = String(body.taxesRuleId)
     } else if (current?.taxesRule?.id) {
@@ -204,26 +203,19 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       payload.taxesRuleId = String(current.taxesRuleId)
     }
 
+    // Always try to find a valid tax rule from the API
+    try {
+      const freshRuleId = await findTaxRuleId()
+      if (freshRuleId) {
+        payload.taxesRuleId = freshRuleId
+      }
+    } catch {
+      // If we can't fetch, use whatever we have
+    }
+
     console.log('[API] Update payload:', JSON.stringify(payload))
 
-    let data: any
-    try {
-      data = await updateProduct(id, payload)
-    } catch (err: any) {
-      // If PR-05 Tax Rule not found, try to find a valid tax rule and retry
-      if (err?.message?.includes('PR-05') && !payload.taxesRuleId) {
-        const taxRuleId = await findTaxRuleId()
-        if (taxRuleId) {
-          payload.taxesRuleId = taxRuleId
-          console.log('[API] Retrying with taxesRuleId:', taxRuleId)
-          data = await updateProduct(id, payload)
-        } else {
-          throw err
-        }
-      } else {
-        throw err
-      }
-    }
+    let data = await updateProduct(id, payload)
     
     // Sync para MySQL em background (não bloqueia a resposta)
     syncProductsToMySQL().catch(err => console.error('[Sync] Products sync error:', err))
