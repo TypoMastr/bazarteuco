@@ -101,6 +101,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
     
     // Normal flow - update in SmartPOS
+    // Fetch current product to get required fields like taxesRuleId
+    let currentProduct: any = null
+    try {
+      currentProduct = await getProduct(id)
+      console.log('[API] Current product taxesRule:', JSON.stringify(currentProduct?.taxesRule), 'taxesRuleId:', currentProduct?.taxesRuleId)
+    } catch (err) {
+      console.error('[API] Could not fetch current product for merge:', err)
+    }
+
     // Remove undefined/null/empty fields to avoid SmartPOS API errors
     const cleanBody: Record<string, unknown> = {}
     for (const [key, value] of Object.entries(body)) {
@@ -109,6 +118,29 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
 
+    // Ensure required fields are always present from the current product
+    if (currentProduct) {
+      const existingTaxRule = currentProduct.taxesRule?.id || currentProduct.taxesRuleId || currentProduct.taxes_rule?.id
+      if (existingTaxRule !== undefined && existingTaxRule !== null) {
+        cleanBody.taxesRuleId = existingTaxRule
+      }
+      const existingCategory = currentProduct.category?.id || currentProduct.category
+      if (existingCategory && !cleanBody.category) {
+        cleanBody.category = existingCategory
+      }
+      // Preserve unit if not provided
+      if (!cleanBody.unit) {
+        const existingUnit = currentProduct.unit?.id || currentProduct.unit
+        if (existingUnit) cleanBody.unit = existingUnit
+      }
+      // Preserve ncm if not provided
+      if (!cleanBody.ncm) {
+        const existingNcm = currentProduct.ncm?.code || currentProduct.ncm
+        if (existingNcm) cleanBody.ncm = existingNcm
+      }
+    }
+
+    console.log('[API] Update body sent to SmartPOS:', JSON.stringify(cleanBody))
     const data = await updateProduct(id, cleanBody)
     
     // Sync para MySQL em background (não bloqueia a resposta)
