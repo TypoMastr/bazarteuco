@@ -148,7 +148,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       // If we can't fetch, build payload without it
     }
 
-    // Map client body to SmartPOS update fields
+    // Build payload matching the creation format — only fields the client sent
     const payload: Record<string, unknown> = {}
 
     if (body.name !== undefined) {
@@ -186,49 +186,37 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       const supId = Number(body.supplierId)
       if (supId) payload.supplierId = supId
     }
-    if (body.googleProductCategoryId !== undefined) {
-      payload.googleProductCategoryId = String(body.googleProductCategoryId)
-    } else if (current?.googleProductCategory?.id) {
-      payload.googleProductCategoryId = String(current.googleProductCategory.id)
-    } else if (current?.googleProductCategoryId) {
-      payload.googleProductCategoryId = String(current.googleProductCategoryId)
-    }
-    if (body.detail !== undefined) {
-      payload.detail = {
-        id: current?.detail?.id || body.detail.id,
-        text: (body.detail.text || '').toUpperCase(),
-        viewMode: body.detail.viewMode || 'TEXT',
-        color: body.detail.color || '#ffff6010',
-      }
-    }
     if (body.promotionalValue !== undefined) {
       payload.promotionalValue = Number(body.promotionalValue) || 0
       if (body.promotionalExpirationDate !== undefined) payload.promotionalExpirationDate = body.promotionalExpirationDate
       if (body.promotionalDisplayTimer !== undefined) payload.promotionalDisplayTimer = body.promotionalDisplayTimer
     }
 
-    // taxesRuleId is a UUID string — try to find a valid one
+    // Only send detail/googleProductCategory/taxesRule if the client explicitly provided them
+    // (creation doesn't send these fields, so partial PUT should also skip them by default)
+    if (body.detail !== undefined && body.detail?.text) {
+      payload.detail = {
+        ...current?.detail,
+        text: (body.detail.text || '').toUpperCase(),
+        viewMode: body.detail.viewMode || 'TEXT',
+        color: body.detail.color || '#ffff6010',
+      }
+    }
+    if (body.googleProductCategoryId !== undefined) {
+      payload.googleProductCategoryId = String(body.googleProductCategoryId)
+    }
     if (body.taxesRuleId !== undefined) {
       payload.taxesRuleId = String(body.taxesRuleId)
-    } else if (current?.taxesRule?.id) {
-      payload.taxesRuleId = String(current.taxesRule.id)
-    } else if (current?.taxesRuleId) {
-      payload.taxesRuleId = String(current.taxesRuleId)
     }
 
-    // Always try to find a valid tax rule from the API
-    try {
-      const freshRuleId = await findTaxRuleId()
-      if (freshRuleId) {
-        payload.taxesRuleId = freshRuleId
-      }
-    } catch {
-      // If we can't fetch, use whatever we have
+    // Try to find a valid tax rule from the API (like creation would auto-assign)
+    const freshRuleId = await findTaxRuleId()
+    if (freshRuleId) {
+      payload.taxesRuleId = freshRuleId
     }
 
     console.log('[API] Update payload:', JSON.stringify(payload))
-
-    let data = await updateProduct(id, payload)
+    const data = await updateProduct(id, payload)
     
     // Sync para MySQL em background (não bloqueia a resposta)
     syncProductsToMySQL().catch(err => console.error('[Sync] Products sync error:', err))
