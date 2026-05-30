@@ -72,7 +72,9 @@ export default function EditProductPage() {
         
         setProductData(data)
         
-        const categoryId = String(data.category?.id || data.category || '')
+        const rawCategory = data.category
+        const categoryId = String(rawCategory?.id || rawCategory || '')
+        console.log('[Edit] data.category:', JSON.stringify(rawCategory), '→ categoryId:', categoryId)
         
         // Fetch current stock from MySQL
         try {
@@ -116,6 +118,7 @@ export default function EditProductPage() {
           return nameA.localeCompare(nameB)
         })
         setCategories(sorted)
+        console.log('[Edit] form.category:', categoryId, '| category IDs in options:', sorted.map(c => String(c.id)).join(','))
         
         const existingCodes = codesData[categoryId] || []
         if (existingCodes.includes(data.alphaCode)) {
