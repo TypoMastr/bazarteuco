@@ -159,7 +159,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     // Build payload matching the creation format — only fields the client sent
     const payload: Record<string, unknown> = {}
 
-    if (body.name !== undefined) {
+    if (body.description !== undefined) {
+      payload.description = body.description
+    } else if (body.name !== undefined) {
       payload.description = (body.name || '').toUpperCase()
     }
     if (body.alphaCode !== undefined) payload.alphaCode = (body.alphaCode || '').toUpperCase()
