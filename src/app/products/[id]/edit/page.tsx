@@ -234,12 +234,6 @@ export default function EditProductPage() {
         detail: form.detail,
       }
 
-      if (productData?.taxesRule?.id) {
-        body.taxesRuleId = productData.taxesRule.id
-      } else if (productData?.taxesRuleId) {
-        body.taxesRuleId = productData.taxesRuleId
-      }
-
       if (productData?.googleProductCategory?.id) {
         body.googleProductCategoryId = productData.googleProductCategory.id
       } else if (form.googleProductCategoryId) {
