@@ -157,11 +157,11 @@ async function main() {
         ]
       )
 
+      const stockQty = product.stockQuantity ?? product.quantity ?? 0
       await connection.execute(
-        `INSERT INTO stock (product_id, quantity)
-         VALUES (?, 0)
-         ON DUPLICATE KEY UPDATE product_id = product_id`,
-        [product.id]
+        `INSERT IGNORE INTO stock (product_id, quantity)
+         VALUES (?, ?)`,
+        [product.id, stockQty]
       )
       productsSynced++
       if (productsSynced % 10 === 0) {

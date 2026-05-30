@@ -169,11 +169,11 @@ export async function syncProductsFromAPI(): Promise<{ synced: number; failed: n
             const isDoacao = productName.includes('doacao') || productName.includes('doação')
 
             if (!isRifa && !isDoacao) {
+              const stockQty = product.stockQuantity ?? product.quantity ?? 0
               await conn.execute(
-                `INSERT INTO stock (product_id, quantity)
-                 VALUES (?, 0)
-                 ON DUPLICATE KEY UPDATE product_id = product_id`,
-                [product.id]
+                `INSERT IGNORE INTO stock (product_id, quantity)
+                 VALUES (?, ?)`,
+                [product.id, stockQty]
               )
             }
 
