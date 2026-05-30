@@ -101,7 +101,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
     
     // Normal flow - update in SmartPOS
-    const data = await updateProduct(id, body)
+    // Remove undefined/null/empty fields to avoid SmartPOS API errors
+    const cleanBody: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(body)) {
+      if (value !== undefined && value !== null && value !== '') {
+        cleanBody[key] = value
+      }
+    }
+
+    const data = await updateProduct(id, cleanBody)
     
     // Sync para MySQL em background (não bloqueia a resposta)
     syncProductsToMySQL().catch(err => console.error('[Sync] Products sync error:', err))

@@ -213,8 +213,7 @@ export default function EditProductPage() {
     if (!validate()) return
     setLoading(true)
     try {
-      const body = {
-        ...form,
+      const body: Record<string, unknown> = {
         name: form.name.toUpperCase(),
         alphaCode: form.alphaCode.toUpperCase(),
         sellValue: parseFloat(form.sellValue) || 0,
@@ -227,7 +226,44 @@ export default function EditProductPage() {
         unit: parseInt(form.unit) || undefined,
         ncm: parseInt(form.ncm) || undefined,
         supplierId: parseInt(form.supplierId) || undefined,
+        isFractional: form.isFractional,
+        noStock: form.noStock,
+        isOpenValue: form.isOpenValue,
+        showCatalog: form.showCatalog,
+        favorite: form.favorite,
+        detail: form.detail,
       }
+
+      if (productData?.taxesRule?.id) {
+        body.taxesRuleId = productData.taxesRule.id
+      } else if (productData?.taxesRuleId) {
+        body.taxesRuleId = productData.taxesRuleId
+      }
+
+      if (productData?.googleProductCategory?.id) {
+        body.googleProductCategoryId = productData.googleProductCategory.id
+      } else if (form.googleProductCategoryId) {
+        body.googleProductCategoryId = parseInt(form.googleProductCategoryId) || undefined
+      }
+
+      if (form.promotionalValue && parseFloat(form.promotionalValue) > 0) {
+        body.promotionalExpirationDate = form.promotionalExpirationDate || undefined
+        body.promotionalDisplayTimer = form.promotionalDisplayTimer
+      }
+
+      if (form.eanCode) {
+        body.eanCode = form.eanCode
+      }
+      if (form.exTipi) {
+        body.exTipi = form.exTipi
+      }
+      if (form.cest) {
+        body.cest = form.cest
+      }
+      if (form.productOrigin) {
+        body.productOrigin = form.productOrigin
+      }
+
       const res = await fetch(`/api/products/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
