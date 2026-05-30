@@ -14,6 +14,13 @@ function getHeaders() {
 }
 
 async function findTaxRuleId(): Promise<string | null> {
+  // 1. Check env var override first
+  const envTaxRule = process.env.DEFAULT_TAX_RULE_ID
+  if (envTaxRule) {
+    console.log('[API] Using DEFAULT_TAX_RULE_ID from env:', envTaxRule)
+    return envTaxRule
+  }
+  // 2. Try SmartPOS /taxes-rules endpoint
   try {
     const url = `${API_BASE}/taxes-rules?page=1&size=100`
     console.log('[API] Fetching tax rules from:', url)
@@ -29,6 +36,7 @@ async function findTaxRuleId(): Promise<string | null> {
           return String(id)
         }
       }
+      console.log('[API] No tax rules found in store')
     } else {
       const errText = await res.text()
       console.log('[API] Tax rules fetch failed:', res.status, errText.substring(0, 200))
@@ -205,14 +213,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (body.googleProductCategoryId !== undefined) {
       payload.googleProductCategoryId = String(body.googleProductCategoryId)
     }
-    if (body.taxesRuleId !== undefined) {
-      payload.taxesRuleId = String(body.taxesRuleId)
-    }
-
-    // Try to find a valid tax rule from the API (like creation would auto-assign)
+    // Try to find a valid tax rule — prefer fresh from API, fall back to product's existing
     const freshRuleId = await findTaxRuleId()
     if (freshRuleId) {
       payload.taxesRuleId = freshRuleId
+    } else if (body.taxesRuleId) {
+      console.log('[API] Falling back to client-provided taxesRuleId:', body.taxesRuleId)
+      payload.taxesRuleId = String(body.taxesRuleId)
+    } else if (current?.taxesRule?.id) {
+      console.log('[API] Falling back to current product taxesRule.id:', current.taxesRule.id)
+      payload.taxesRuleId = String(current.taxesRule.id)
+    } else {
+      console.log('[API] WARNING: No taxesRuleId available — update may fail with PR-05')
     }
 
     console.log('[API] Update payload:', JSON.stringify(payload))
