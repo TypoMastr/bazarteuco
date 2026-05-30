@@ -110,9 +110,33 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     // Remove fields that the PUT endpoint would reject
     const readonlyFields = ['id', 'createdAt', 'created_at', 'updatedAt', 'updated_at', 'syncedAt', 'synced_at', 'pendingSync']
     const merged: Record<string, unknown> = {}
+
+    // Copy non-readonly fields, normalizing nested objects to flat values
     for (const key of Object.keys(current)) {
-      if (!readonlyFields.includes(key)) {
-        merged[key] = current[key]
+      if (readonlyFields.includes(key)) continue
+      const val = current[key]
+      
+      // Normalize nested objects to the flat format that PUT endpoint expects
+      if (key === 'category' && val?.id) {
+        merged.category = val.id
+      } else if (key === 'unit' && val?.id) {
+        merged.unit = val.id
+      } else if (key === 'ncm' && val?.code) {
+        merged.ncm = val.code
+      } else if (key === 'taxesRule' && val?.id) {
+        merged.taxesRuleId = val.id
+      } else if (key === 'supplier' && val?.id) {
+        merged.supplierId = val.id
+      } else if (key === 'googleProductCategory' && val?.id) {
+        merged.googleProductCategoryId = val.id
+      } else if (key === 'googleProductCategory' && !val?.id) {
+        continue
+      } else if (key === 'taxesRule' && !val?.id) {
+        continue
+      } else if (key === 'supplier' && !val?.id) {
+        // Don't include empty supplier
+      } else {
+        merged[key] = val
       }
     }
 
@@ -137,6 +161,26 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (body.observation !== undefined) merged.observation = body.observation
     if (body.exTipi !== undefined) merged.exTipi = body.exTipi
     if (body.cest !== undefined) merged.cest = body.cest
+    if (body.category !== undefined) {
+      const catId = Number(body.category)
+      if (catId) merged.category = catId
+    }
+    if (body.unit !== undefined) {
+      const unitId = Number(body.unit)
+      if (unitId) merged.unit = unitId
+    }
+    if (body.ncm !== undefined) {
+      const ncmCode = Number(body.ncm)
+      if (ncmCode) merged.ncm = ncmCode
+    }
+    if (body.supplierId !== undefined) {
+      const supId = Number(body.supplierId)
+      if (supId) merged.supplierId = supId
+    }
+    if (body.googleProductCategoryId !== undefined) {
+      const gpcId = Number(body.googleProductCategoryId)
+      if (gpcId) merged.googleProductCategoryId = gpcId
+    }
     if (body.detail !== undefined) {
       merged.detail = {
         text: (body.detail.text || '').toUpperCase(),
@@ -144,35 +188,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         color: body.detail.color || '#ffff6010',
       }
     }
-
-    // Handle nested object fields
-    if (body.category !== undefined) {
-      const catId = Number(body.category)
-      if (catId) merged.category = { id: catId, description: current?.category?.description || '' }
-    }
-    if (body.unit !== undefined) {
-      const unitId = Number(body.unit)
-      if (unitId) merged.unit = { id: unitId }
-    }
-    if (body.ncm !== undefined) {
-      const ncmCode = Number(body.ncm)
-      if (ncmCode) merged.ncm = { code: ncmCode }
-    }
-    if (body.supplierId !== undefined) {
-      const supId = Number(body.supplierId)
-      if (supId) merged.supplier = { id: supId }
-    }
-    if (body.googleProductCategoryId !== undefined) {
-      const gpcId = Number(body.googleProductCategoryId)
-      if (gpcId) merged.googleProductCategory = { id: gpcId }
-    }
     if (body.promotionalValue !== undefined) {
       merged.promotionalValue = Number(body.promotionalValue) || 0
       if (body.promotionalExpirationDate !== undefined) merged.promotionalExpirationDate = body.promotionalExpirationDate
       if (body.promotionalDisplayTimer !== undefined) merged.promotionalDisplayTimer = body.promotionalDisplayTimer
     }
 
-    console.log('[API] Update payload keys:', Object.keys(merged))
+    console.log('[API] Update payload:', JSON.stringify(merged))
     const data = await updateProduct(id, merged)
     
     // Sync para MySQL em background (não bloqueia a resposta)
