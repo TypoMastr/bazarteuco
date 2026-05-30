@@ -13,21 +13,18 @@ function getHeaders() {
   }
 }
 
-async function findTaxRuleId(): Promise<number | null> {
-  const paths = ['/taxesrules', '/taxrules', '/tax-rules', '/tax-classes']
-  for (const path of paths) {
-    try {
-      const res = await fetch(`${API_BASE}${path}`, { headers: getHeaders() })
-      if (res.ok) {
-        const data = await res.json()
-        const items = data?.items || data?.data || []
-        if (items.length > 0) {
-          return items[0].id || null
-        }
+async function findTaxRuleId(): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_BASE}/taxes-rules?page=1&size=100`, { headers: getHeaders() })
+    if (res.ok) {
+      const data = await res.json()
+      const items = data?.items || []
+      if (items.length > 0) {
+        return String(items[0].id) || null
       }
-    } catch {
-      continue
     }
+  } catch {
+    // ignore
   }
   return null
 }
@@ -130,10 +127,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
     
     // Normal flow - update in SmartPOS
-    // Build payload with only the fields the client explicitly sent
-    const payload: Record<string, unknown> = {}
+    // Fetch current product to get UUID taxesRuleId, detail.id, etc.
+    let current: any = null
+    try {
+      current = await getProduct(id)
+    } catch {
+      // If we can't fetch, build payload without it
+    }
 
     // Map client body to SmartPOS update fields
+    const payload: Record<string, unknown> = {}
+
     if (body.name !== undefined) {
       payload.name = (body.name || '').toUpperCase()
       payload.description = (body.name || '').toUpperCase()
@@ -171,11 +175,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       if (supId) payload.supplierId = supId
     }
     if (body.googleProductCategoryId !== undefined) {
-      const gpcId = Number(body.googleProductCategoryId)
-      if (gpcId) payload.googleProductCategoryId = gpcId
+      payload.googleProductCategoryId = String(body.googleProductCategoryId)
+    } else if (current?.googleProductCategory?.id) {
+      payload.googleProductCategoryId = String(current.googleProductCategory.id)
+    } else if (current?.googleProductCategoryId) {
+      payload.googleProductCategoryId = String(current.googleProductCategoryId)
     }
     if (body.detail !== undefined) {
       payload.detail = {
+        id: current?.detail?.id || body.detail.id,
         text: (body.detail.text || '').toUpperCase(),
         viewMode: body.detail.viewMode || 'TEXT',
         color: body.detail.color || '#ffff6010',
@@ -187,15 +195,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       if (body.promotionalDisplayTimer !== undefined) payload.promotionalDisplayTimer = body.promotionalDisplayTimer
     }
 
-    // Ensure taxesRuleId is always present — fetch current product if needed
-    if (!payload.taxesRuleId) {
-      try {
-        const current = await getProduct(id)
-        const ruleId = current?.taxesRule?.id || current?.taxesRuleId
-        if (ruleId) payload.taxesRuleId = ruleId
-      } catch {
-        // Silently fail — try update without it
-      }
+    // taxesRuleId is a UUID string — preserve from current product if not sent
+    if (body.taxesRuleId !== undefined) {
+      payload.taxesRuleId = String(body.taxesRuleId)
+    } else if (current?.taxesRule?.id) {
+      payload.taxesRuleId = String(current.taxesRule.id)
+    } else if (current?.taxesRuleId) {
+      payload.taxesRuleId = String(current.taxesRuleId)
     }
 
     console.log('[API] Update payload:', JSON.stringify(payload))
