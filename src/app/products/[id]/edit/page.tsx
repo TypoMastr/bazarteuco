@@ -213,61 +213,123 @@ export default function EditProductPage() {
     if (!validate()) return
     setLoading(true)
     try {
-      const body: Record<string, unknown> = {
-        name: form.name.toUpperCase(),
-        alphaCode: form.alphaCode.toUpperCase(),
-        sellValue: parseFloat(form.sellValue) || 0,
-        costValue: parseFloat(form.costValue) || 0,
-        netWeight: parseFloat(form.netWeight) || 0,
-        grossWeight: parseFloat(form.grossWeight) || 0,
-        minimumStock: parseFloat(form.minimumStock) || 0,
-        promotionalValue: parseFloat(form.promotionalValue) || 0,
-        category: parseInt(form.category) || undefined,
-        unit: parseInt(form.unit) || undefined,
-        ncm: parseInt(form.ncm) || undefined,
-        supplierId: parseInt(form.supplierId) || undefined,
-        isFractional: form.isFractional,
-        noStock: form.noStock,
-        isOpenValue: form.isOpenValue,
-        showCatalog: form.showCatalog,
-        favorite: form.favorite,
-        detail: form.detail,
+      // Build a diff — only send fields that actually changed
+      const changes: Record<string, unknown> = {}
+
+      const oldName = (productData?.name || '').toUpperCase()
+      const newName = form.name.toUpperCase()
+      if (newName !== oldName) changes.description = newName
+
+      const oldAlpha = (productData?.alphaCode || '').toUpperCase()
+      const newAlpha = form.alphaCode.toUpperCase()
+      if (newAlpha !== oldAlpha) changes.alphaCode = newAlpha
+
+      const newSell = parseFloat(form.sellValue) || 0
+      const oldSell = productData?.sellValue || 0
+      if (newSell !== oldSell) changes.sellValue = newSell
+
+      const newCost = parseFloat(form.costValue) || 0
+      const oldCost = productData?.costValue || 0
+      if (newCost !== oldCost) changes.costValue = newCost
+
+      const newMinStock = parseFloat(form.minimumStock) || 0
+      const oldMinStock = productData?.minimumStock || 0
+      if (newMinStock !== oldMinStock) changes.minimumStock = newMinStock
+
+      const newNetW = parseFloat(form.netWeight) || 0
+      const oldNetW = productData?.netWeight || 0
+      if (newNetW !== oldNetW) changes.netWeight = newNetW
+
+      const newGrossW = parseFloat(form.grossWeight) || 0
+      const oldGrossW = productData?.grossWeight || 0
+      if (newGrossW !== oldGrossW) changes.grossWeight = newGrossW
+
+      if (form.isFractional !== !!productData?.isFractional) changes.isFractional = form.isFractional
+      if (form.noStock !== !!productData?.noStock) changes.noStock = form.noStock
+      if (form.isOpenValue !== !!productData?.isOpenValue) changes.isOpenValue = form.isOpenValue
+      if (form.showCatalog !== (productData?.showCatalog ?? true)) changes.showCatalog = form.showCatalog
+      if (form.favorite !== (productData?.favorite || 0)) changes.favorite = form.favorite
+
+      const newCat = parseInt(form.category) || undefined
+      const oldCat = productData?.category?.id || productData?.category || undefined
+      if (newCat !== oldCat) changes.category = newCat
+
+      const newUnit = parseInt(form.unit) || undefined
+      const oldUnit = productData?.unit?.id || productData?.unit || undefined
+      if (newUnit !== oldUnit) changes.unit = newUnit
+
+      const newNcm = parseInt(form.ncm) || undefined
+      const oldNcm = productData?.ncm?.code || productData?.ncm || undefined
+      if (newNcm !== oldNcm) changes.ncm = newNcm
+
+      const newSupplier = parseInt(form.supplierId) || undefined
+      const oldSupplier = productData?.supplier?.id || productData?.supplierId || undefined
+      if (newSupplier !== oldSupplier) changes.supplierId = newSupplier
+
+      const newEan = form.eanCode || undefined
+      const oldEan = productData?.eanCode || undefined
+      if (newEan !== oldEan) changes.eanCode = newEan
+
+      const newExTipi = form.exTipi || undefined
+      const oldExTipi = productData?.exTipi || undefined
+      if (newExTipi !== oldExTipi) changes.exTipi = newExTipi
+
+      const newCest = form.cest || undefined
+      const oldCest = productData?.cest || undefined
+      if (newCest !== oldCest) changes.cest = newCest
+
+      const newOrigin = form.productOrigin || undefined
+      const oldOrigin = productData?.productOrigin || undefined
+      if (newOrigin !== oldOrigin) changes.productOrigin = newOrigin
+
+      // Promotional fields — only if promotionalValue changed
+      const newPromo = parseFloat(form.promotionalValue) || 0
+      const oldPromo = productData?.promotionalValue || 0
+      if (newPromo !== oldPromo) {
+        changes.promotionalValue = newPromo
+        if (form.promotionalValue && newPromo > 0) {
+          changes.promotionalExpirationDate = form.promotionalExpirationDate || undefined
+          changes.promotionalDisplayTimer = form.promotionalDisplayTimer
+        }
       }
 
-      if (productData?.taxesRule?.id) {
-        body.taxesRuleId = productData.taxesRule.id
-      } else if (productData?.taxesRuleId) {
-        body.taxesRuleId = productData.taxesRuleId
+      // Detail — compare text, viewMode, color
+      const oldDetail = productData?.detail || { text: '', viewMode: 'TEXT', color: '#ffffff' }
+      if (
+        (form.detail.text || '') !== (oldDetail.text || '') ||
+        (form.detail.viewMode || 'TEXT') !== (oldDetail.viewMode || 'TEXT') ||
+        (form.detail.color || '#ffffff') !== (oldDetail.color || '#ffffff')
+      ) {
+        changes.detail = {
+          id: oldDetail.id,
+          text: (form.detail.text || '').toUpperCase(),
+          viewMode: form.detail.viewMode || 'TEXT',
+          color: form.detail.color || '#ffff6010',
+        }
       }
 
+      // NEVER send taxesRuleId from client — server resolves it via /taxes-rules or DEFAULT_TAX_RULE_ID
+
+      // googleProductCategoryId — only if explicitly changed
       if (productData?.googleProductCategory?.id) {
-        body.googleProductCategoryId = String(productData.googleProductCategory.id)
+        const newGpc = String(productData.googleProductCategory.id)
+        if (form.googleProductCategoryId && form.googleProductCategoryId !== newGpc) {
+          changes.googleProductCategoryId = String(form.googleProductCategoryId)
+        }
       } else if (form.googleProductCategoryId) {
-        body.googleProductCategoryId = String(form.googleProductCategoryId) || undefined
+        changes.googleProductCategoryId = String(form.googleProductCategoryId)
       }
 
-      if (form.promotionalValue && parseFloat(form.promotionalValue) > 0) {
-        body.promotionalExpirationDate = form.promotionalExpirationDate || undefined
-        body.promotionalDisplayTimer = form.promotionalDisplayTimer
-      }
-
-      if (form.eanCode) {
-        body.eanCode = form.eanCode
-      }
-      if (form.exTipi) {
-        body.exTipi = form.exTipi
-      }
-      if (form.cest) {
-        body.cest = form.cest
-      }
-      if (form.productOrigin) {
-        body.productOrigin = form.productOrigin
+      if (Object.keys(changes).length === 0) {
+        toast.success('Nenhuma alteração para salvar')
+        setLoading(false)
+        return
       }
 
       const res = await fetch(`/api/products/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify(changes),
       })
       if (res.ok) {
         toast.success('Produto atualizado com sucesso')
