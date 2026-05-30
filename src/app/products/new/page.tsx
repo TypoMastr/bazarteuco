@@ -213,7 +213,7 @@ export default function NewProductPage() {
                   <Select 
                     value={form.category} 
                     onChange={(e) => handleCategoryChange(e.target.value)}
-                    options={[{ value: '', label: 'Selecione uma categoria' }, ...categories.map((c) => ({ value: c.id, label: (c.name || c.description || '').toUpperCase() }))]} 
+                    options={[{ value: '', label: 'Selecione uma categoria' }, ...categories.map((c) => ({ value: String(c.id), label: (c.name || c.description || '').toUpperCase() }))]} 
                     className="h-16 text-sm font-bold uppercase tracking-wider"
                   />
                   {errors.category && <p className="text-[10px] font-bold text-red-600 mt-1 uppercase tracking-wider ml-2">{errors.category}</p>}

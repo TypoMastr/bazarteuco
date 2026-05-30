@@ -492,7 +492,7 @@ export default function EditProductPage() {
                   <Select 
                     value={form.category} 
                     onChange={(e) => handleCategoryChange(e.target.value)}
-                    options={categories.map((c) => ({ value: c.id, label: (c.name || c.description || '').toUpperCase() }))} 
+                    options={categories.map((c) => ({ value: String(c.id), label: (c.name || c.description || '').toUpperCase() }))} 
                     className="h-16 text-sm font-bold uppercase tracking-wider"
                   />
                 </div>
