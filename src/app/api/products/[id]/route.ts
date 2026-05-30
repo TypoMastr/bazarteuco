@@ -15,16 +15,26 @@ function getHeaders() {
 
 async function findTaxRuleId(): Promise<string | null> {
   try {
-    const res = await fetch(`${API_BASE}/taxes-rules?page=1&size=100`, { headers: getHeaders() })
+    const url = `${API_BASE}/taxes-rules?page=1&size=100`
+    console.log('[API] Fetching tax rules from:', url)
+    const res = await fetch(url, { headers: getHeaders() })
     if (res.ok) {
       const data = await res.json()
-      const items = data?.items || []
+      console.log('[API] Tax rules response:', JSON.stringify(data).substring(0, 500))
+      const items = data?.items || data?.data || (Array.isArray(data) ? data : [])
       if (items.length > 0) {
-        return String(items[0].id) || null
+        const id = items[0]?.id
+        if (id) {
+          console.log('[API] Found tax rule ID:', id)
+          return String(id)
+        }
       }
+    } else {
+      const errText = await res.text()
+      console.log('[API] Tax rules fetch failed:', res.status, errText.substring(0, 200))
     }
-  } catch {
-    // ignore
+  } catch (err) {
+    console.log('[API] Tax rules fetch error:', err)
   }
   return null
 }
@@ -131,6 +141,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     let current: any = null
     try {
       current = await getProduct(id)
+      console.log('[API] Current product taxesRule:', JSON.stringify(current?.taxesRule))
+      console.log('[API] Current product taxesRuleId:', current?.taxesRuleId)
+      console.log('[API] Current product detail:', JSON.stringify(current?.detail))
     } catch {
       // If we can't fetch, build payload without it
     }
