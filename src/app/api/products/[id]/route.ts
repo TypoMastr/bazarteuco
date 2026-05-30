@@ -101,50 +101,79 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
     
     // Normal flow - update in SmartPOS
-    // Build payload matching the exact same structure as product creation
-    const description = (body.name || '').toUpperCase()
-    const payload: Record<string, unknown> = {
-      alphaCode: (body.alphaCode || '').toUpperCase(),
-      description: description,
-      sellValue: Number(body.sellValue) || 0,
-      costValue: Number(body.costValue) || 0,
-      minimumStock: Number(body.minimumStock) || 0,
-      isFractional: body.isFractional ?? false,
-      noStock: body.noStock ?? false,
-      isOpenValue: body.isOpenValue ?? false,
-      showCatalog: body.showCatalog ?? true,
-      favorite: body.favorite ?? 1,
-      productOrigin: body.productOrigin || 'NACIONAL',
-      category: Number(body.category),
+    // Fetch current product to preserve required fields like taxesRule
+    const current = await getProduct(id)
+    console.log('[API] Current product keys:', Object.keys(current || {}))
+    console.log('[API] Current taxesRule:', JSON.stringify(current?.taxesRule))
+
+    // Build payload merging current product data with client changes
+    // Remove fields that the PUT endpoint would reject
+    const readonlyFields = ['id', 'createdAt', 'created_at', 'updatedAt', 'updated_at', 'syncedAt', 'synced_at', 'pendingSync']
+    const merged: Record<string, unknown> = {}
+    for (const key of Object.keys(current)) {
+      if (!readonlyFields.includes(key)) {
+        merged[key] = current[key]
+      }
     }
 
-    if (body.eanCode) payload.eanCode = body.eanCode
-    if (body.netWeight) payload.netWeight = Number(body.netWeight)
-    if (body.grossWeight) payload.grossWeight = Number(body.grossWeight)
-    if (body.observation) payload.observation = body.observation
-    if (body.exTipi) payload.exTipi = body.exTipi
-    if (body.cest) payload.cest = body.cest
-    if (body.promotionalValue && Number(body.promotionalValue) > 0) {
-      payload.promotionalValue = Number(body.promotionalValue)
-      payload.promotionalExpirationDate = body.promotionalExpirationDate || undefined
-      payload.promotionalDisplayTimer = body.promotionalDisplayTimer ?? false
+    // Apply client changes on top
+    if (body.name !== undefined) {
+      merged.name = (body.name || '').toUpperCase()
+      merged.description = (body.name || '').toUpperCase()
     }
-    if (body.unit) payload.unit = Number(body.unit)
-    if (body.ncm) payload.ncm = Number(body.ncm)
-    if (body.supplierId) payload.supplierId = Number(body.supplierId)
-    if (body.detail) {
-      payload.detail = {
+    if (body.alphaCode !== undefined) merged.alphaCode = (body.alphaCode || '').toUpperCase()
+    if (body.sellValue !== undefined) merged.sellValue = Number(body.sellValue) || 0
+    if (body.costValue !== undefined) merged.costValue = Number(body.costValue) || 0
+    if (body.minimumStock !== undefined) merged.minimumStock = Number(body.minimumStock) || 0
+    if (body.isFractional !== undefined) merged.isFractional = body.isFractional
+    if (body.noStock !== undefined) merged.noStock = body.noStock
+    if (body.isOpenValue !== undefined) merged.isOpenValue = body.isOpenValue
+    if (body.showCatalog !== undefined) merged.showCatalog = body.showCatalog
+    if (body.favorite !== undefined) merged.favorite = body.favorite
+    if (body.productOrigin !== undefined) merged.productOrigin = body.productOrigin
+    if (body.eanCode !== undefined) merged.eanCode = body.eanCode
+    if (body.netWeight !== undefined) merged.netWeight = Number(body.netWeight)
+    if (body.grossWeight !== undefined) merged.grossWeight = Number(body.grossWeight)
+    if (body.observation !== undefined) merged.observation = body.observation
+    if (body.exTipi !== undefined) merged.exTipi = body.exTipi
+    if (body.cest !== undefined) merged.cest = body.cest
+    if (body.detail !== undefined) {
+      merged.detail = {
         text: (body.detail.text || '').toUpperCase(),
         viewMode: body.detail.viewMode || 'TEXT',
         color: body.detail.color || '#ffff6010',
       }
     }
-    if (body.googleProductCategoryId) {
-      payload.googleProductCategoryId = Number(body.googleProductCategoryId)
+
+    // Handle nested object fields
+    if (body.category !== undefined) {
+      const catId = Number(body.category)
+      if (catId) merged.category = { id: catId, description: current?.category?.description || '' }
+    }
+    if (body.unit !== undefined) {
+      const unitId = Number(body.unit)
+      if (unitId) merged.unit = { id: unitId }
+    }
+    if (body.ncm !== undefined) {
+      const ncmCode = Number(body.ncm)
+      if (ncmCode) merged.ncm = { code: ncmCode }
+    }
+    if (body.supplierId !== undefined) {
+      const supId = Number(body.supplierId)
+      if (supId) merged.supplier = { id: supId }
+    }
+    if (body.googleProductCategoryId !== undefined) {
+      const gpcId = Number(body.googleProductCategoryId)
+      if (gpcId) merged.googleProductCategory = { id: gpcId }
+    }
+    if (body.promotionalValue !== undefined) {
+      merged.promotionalValue = Number(body.promotionalValue) || 0
+      if (body.promotionalExpirationDate !== undefined) merged.promotionalExpirationDate = body.promotionalExpirationDate
+      if (body.promotionalDisplayTimer !== undefined) merged.promotionalDisplayTimer = body.promotionalDisplayTimer
     }
 
-    console.log('[API] Update payload:', JSON.stringify(payload))
-    const data = await updateProduct(id, payload)
+    console.log('[API] Update payload keys:', Object.keys(merged))
+    const data = await updateProduct(id, merged)
     
     // Sync para MySQL em background (não bloqueia a resposta)
     syncProductsToMySQL().catch(err => console.error('[Sync] Products sync error:', err))
