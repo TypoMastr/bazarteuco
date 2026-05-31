@@ -116,6 +116,11 @@ export default function EditProductPage() {
           const nameB = (b.name || b.description || '').toLowerCase()
           return nameA.localeCompare(nameB)
         })
+        // Ensure product's current category is in the list even if deleted from SmartPOS
+        if (categoryId && rawCategory && !sorted.some(c => String(c.id) === categoryId)) {
+          const catName = (rawCategory as any)?.name || (rawCategory as any)?.description || `Categoria ${categoryId}`
+          sorted.unshift({ id: Number(categoryId), name: catName })
+        }
         setCategories(sorted)
         console.log('[Edit] form.category:', categoryId, '| category IDs in options:', sorted.map(c => String(c.id)).join(','))
         
