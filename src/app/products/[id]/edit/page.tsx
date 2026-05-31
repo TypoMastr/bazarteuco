@@ -495,12 +495,17 @@ export default function EditProductPage() {
                   {fetching ? (
                     <div className="h-16 rounded-xl border-2 border-[#DEE2E6] bg-white flex items-center px-4 text-sm text-gray-400">Carregando...</div>
                   ) : (
-                    <Select 
+                    <select
                       value={form.category}
                       onChange={(e) => handleCategoryChange(e.target.value)}
-                      options={categories.map((c) => ({ value: String(c.id), label: (c.name || c.description || '').toUpperCase() }))} 
-                      className="h-16 text-sm font-bold uppercase tracking-wider"
-                    />
+                      className="flex h-16 w-full appearance-none rounded-xl border-2 border-[#DEE2E6] bg-white px-4 py-3 pr-10 text-sm font-bold uppercase tracking-wider text-[#0f172a] ring-offset-white transition-all duration-200 focus:outline-none focus:border-[#08A045] focus:ring-2 focus:ring-[#08A045]/20"
+                    >
+                      {categories.map((c) => (
+                        <option key={c.id} value={String(c.id)}>
+                          {(c.name || c.description || '').toUpperCase()}
+                        </option>
+                      ))}
+                    </select>
                   )}
                 </div>
 
