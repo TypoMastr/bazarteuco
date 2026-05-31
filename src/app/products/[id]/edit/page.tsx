@@ -119,7 +119,7 @@ export default function EditProductPage() {
           supplierId: String(data.supplier?.id || data.supplierId || ''),
           detail: data.detail || { text: '', viewMode: 'TEXT', color: '#ffffff' },
         })
-        
+
         setInitialCategory(categoryId)
         const cats = categoriesData.items || categoriesData.data || categoriesData || []
         const sorted = [...cats].sort((a: Category, b: Category) => {
@@ -127,6 +127,18 @@ export default function EditProductPage() {
           const nameB = (b.name || b.description || '').toLowerCase()
           return nameA.localeCompare(nameB)
         })
+        // If categoryId didn't match any option, try matching by name
+        if (categoryId && !sorted.some(c => String(c.id) === categoryId)) {
+          const nameToMatch = (typeof rawCategory === 'object' && rawCategory != null)
+            ? (rawCategory.name || rawCategory.description || '').toLowerCase()
+            : ''
+          if (nameToMatch) {
+            const match = sorted.find(c =>
+              (c.name || c.description || '').toLowerCase() === nameToMatch
+            )
+            if (match) categoryId = String(match.id)
+          }
+        }
         // Ensure product's current category is in the list even if deleted from SmartPOS
         if (categoryId && !sorted.some(c => String(c.id) === categoryId)) {
           const catName = (typeof rawCategory === 'object' && rawCategory != null)
@@ -135,7 +147,9 @@ export default function EditProductPage() {
           sorted.unshift({ id: Number(categoryId), name: catName })
         }
         setCategories(sorted)
-        console.log('[Edit] form.category:', categoryId, '| category IDs in options:', sorted.map(c => String(c.id)).join(','))
+        // Update form with corrected categoryId (after name-based fallback)
+        setForm(prev => ({ ...prev, category: categoryId }))
+        console.log('[Edit] data.category:', JSON.stringify(rawCategory), '→ categoryId:', categoryId, '| category IDs in options:', sorted.map(c => String(c.id)).join(','))
         
         const existingCodes = codesData[categoryId] || []
         if (existingCodes.includes(data.alphaCode)) {
@@ -169,14 +183,8 @@ export default function EditProductPage() {
   }
 
   function handleCategoryChange(categoryId: string) {
-    const oldCategory = form.category
-    
     setForm(prev => ({ ...prev, category: categoryId }))
     setErrors(prev => ({ ...prev, alphaCode: '' }))
-    
-    if (categoryId !== oldCategory && categoryId) {
-      generateNextCode(categoryId)
-    }
   }
 
   function handleAlphaCodeChange(value: string) {
