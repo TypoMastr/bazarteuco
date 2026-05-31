@@ -72,7 +72,18 @@ export default function EditProductPage() {
         setProductData(data)
         
         const rawCategory = data.category
-        const categoryId = String(rawCategory?.id || rawCategory || '')
+        let categoryId = ''
+        if (rawCategory != null) {
+          if (typeof rawCategory === 'object' && rawCategory.id != null) {
+            categoryId = String(rawCategory.id)
+          } else if (typeof rawCategory === 'number' || typeof rawCategory === 'string') {
+            categoryId = String(rawCategory)
+          } else if (typeof rawCategory === 'object') {
+            const catObj = rawCategory as Record<string, unknown>
+            const catId = catObj.categoryId || catObj.category_id || catObj.ID
+            if (catId != null) categoryId = String(catId)
+          }
+        }
         console.log('[Edit] data.category:', JSON.stringify(rawCategory), '→ categoryId:', categoryId)
         
         // Fetch current stock from MySQL
@@ -117,8 +128,10 @@ export default function EditProductPage() {
           return nameA.localeCompare(nameB)
         })
         // Ensure product's current category is in the list even if deleted from SmartPOS
-        if (categoryId && rawCategory && !sorted.some(c => String(c.id) === categoryId)) {
-          const catName = (rawCategory as any)?.name || (rawCategory as any)?.description || `Categoria ${categoryId}`
+        if (categoryId && !sorted.some(c => String(c.id) === categoryId)) {
+          const catName = (typeof rawCategory === 'object' && rawCategory != null)
+            ? ((rawCategory as any).name || (rawCategory as any).description || `Categoria ${categoryId}`)
+            : `Categoria ${categoryId}`
           sorted.unshift({ id: Number(categoryId), name: catName })
         }
         setCategories(sorted)

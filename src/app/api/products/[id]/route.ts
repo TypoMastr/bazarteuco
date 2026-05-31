@@ -3,50 +3,6 @@ import { syncProductsToMySQL } from '@/lib/sync-to-mysql'
 import { executeUpdate, executeQuery } from '@/lib/mysql-client'
 import { NextRequest, NextResponse } from 'next/server'
 
-const API_BASE = 'https://api.smartpos.app/v1'
-
-function getHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    'X-Api-Key-Id': process.env.SMARTPOS_API_KEY_ID!,
-    'X-Api-Key-Secret': process.env.SMARTPOS_API_KEY_SECRET!,
-  }
-}
-
-async function findTaxRuleId(): Promise<string | null> {
-  // 1. Check env var override first
-  const envTaxRule = process.env.DEFAULT_TAX_RULE_ID
-  if (envTaxRule) {
-    console.log('[API] Using DEFAULT_TAX_RULE_ID from env:', envTaxRule)
-    return envTaxRule
-  }
-  // 2. Try SmartPOS /taxes-rules endpoint
-  try {
-    const url = `${API_BASE}/taxes-rules?page=1&size=100`
-    console.log('[API] Fetching tax rules from:', url)
-    const res = await fetch(url, { headers: getHeaders() })
-    if (res.ok) {
-      const data = await res.json()
-      console.log('[API] Tax rules response:', JSON.stringify(data).substring(0, 500))
-      const items = data?.items || data?.data || (Array.isArray(data) ? data : [])
-      if (items.length > 0) {
-        const id = items[0]?.id
-        if (id) {
-          console.log('[API] Found tax rule ID:', id)
-          return String(id)
-        }
-      }
-      console.log('[API] No tax rules found in store')
-    } else {
-      const errText = await res.text()
-      console.log('[API] Tax rules fetch failed:', res.status, errText.substring(0, 200))
-    }
-  } catch (err) {
-    console.log('[API] Tax rules fetch error:', err)
-  }
-  return null
-}
-
 async function ensureTablesExist() {
   await executeUpdate(`
     CREATE TABLE IF NOT EXISTS products (
@@ -145,15 +101,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
     
     // Normal flow - update in SmartPOS
-    // Fetch current product to get UUID taxesRuleId, detail.id, etc.
+    // Fetch current product to get detail.id for detail updates
     let current: any = null
     try {
       current = await getProduct(id)
-      console.log('[API] Current product taxesRule:', JSON.stringify(current?.taxesRule))
-      console.log('[API] Current product taxesRuleId:', current?.taxesRuleId)
-      console.log('[API] Current product detail:', JSON.stringify(current?.detail))
     } catch {
-      // If we can't fetch, build payload without it
+      // If we can't fetch, build payload without detail
     }
 
     // Build payload matching the creation format — only fields the client sent
@@ -215,18 +168,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (body.googleProductCategoryId !== undefined) {
       payload.googleProductCategoryId = String(body.googleProductCategoryId)
     }
-    // Try to find a valid tax rule — prefer fresh from API, fall back to product's existing
-    const freshRuleId = await findTaxRuleId()
-    if (freshRuleId) {
-      payload.taxesRuleId = freshRuleId
-    } else if (body.taxesRuleId) {
-      console.log('[API] Falling back to client-provided taxesRuleId:', body.taxesRuleId)
+    // taxesRuleId — only if the client explicitly sent it (never inject automatically)
+    if (body.taxesRuleId !== undefined) {
       payload.taxesRuleId = String(body.taxesRuleId)
-    } else if (current?.taxesRule?.id) {
-      console.log('[API] Falling back to current product taxesRule.id:', current.taxesRule.id)
-      payload.taxesRuleId = String(current.taxesRule.id)
-    } else {
-      console.log('[API] WARNING: No taxesRuleId available — update may fail with PR-05')
     }
 
     console.log('[API] Update payload:', JSON.stringify(payload))
